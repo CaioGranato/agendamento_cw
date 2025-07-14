@@ -32,4 +32,5 @@ export interface ScheduledMessage {
   status: ScheduleStatus;
   contactId: number;
   conversationId: number;
+  lastUpdate?: string; // Novo campo para a última atualização (ISO string)
 }
