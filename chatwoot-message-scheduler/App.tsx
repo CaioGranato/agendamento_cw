@@ -257,16 +257,21 @@ export default function App() {
 
         window.addEventListener('message', handleChatwootMessage);
         window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
-        
+
         const timer = setTimeout(() => {
-            setStatus(currentStatus => currentStatus === 'loading' ? 'waiting' : currentStatus);
+            setStatus(currentStatus => {
+                if (currentStatus === 'loading' && !appContext) {
+                    return 'waiting';
+                }
+                return currentStatus;
+            });
         }, 3000);
 
         return () => {
             window.removeEventListener('message', handleChatwootMessage);
             clearTimeout(timer);
         };
-    }, []);
+    }, [appContext]);
 
     useEffect(() => {
         if (appContext?.contact) {
