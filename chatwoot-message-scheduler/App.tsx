@@ -23,40 +23,29 @@ export default function App() {
 
     useEffect(() => {
     const handleChatwootMessage = (event: MessageEvent) => {
-        console.log('[ChatwootApp] Mensagem recebida:', event.data); // 🔍 Log 1
-
         try {
-            if (typeof event.data !== 'string') {
-                console.warn('[ChatwootApp] Dados recebidos não são string:', event.data); // 🔍 Log 2
-                return;
-            }
-
+            if (typeof event.data !== 'string') return;
             const data = JSON.parse(event.data);
-            console.log('[ChatwootApp] Dados parseados com sucesso:', data); // 🔍 Log 3
-
             if (data.event === 'appContext') {
-                console.log('[ChatwootApp] AppContext recebido:', data.data); // 🔥 Log 4
+                console.log('📨 appContext recebido:', data.data);
                 setAppContext(data.data as AppContext);
                 setStatus('ready');
-            } else {
-                console.warn('[ChatwootApp] Evento não é appContext:', data.event); // 🔍 Log 5
             }
-
         } catch (error) {
-            console.error('[ChatwootApp] Erro ao fazer parse do JSON:', error); // ❌ Log 6
+            console.warn('❌ Erro ao processar mensagem:', error);
         }
     };
 
     window.addEventListener('message', handleChatwootMessage);
-    window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*'); // 🔄 Enviando requisição para o Chatwoot
+    window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
 
     const timer = setTimeout(() => {
-        setStatus(currentStatus => {
-            if (currentStatus === 'loading' && !appContext) {
-                console.warn('[ChatwootApp] Nenhum contexto recebido após 3 segundos. Mudando status para waiting.'); // ⏱️ Log 7
+        setStatus(prev => {
+            if (prev === 'loading' && !appContext) {
+                console.log('⏰ Timeout atingido — appContext ainda não chegou');
                 return 'waiting';
             }
-            return currentStatus;
+            return prev;
         });
     }, 3000);
 
@@ -64,7 +53,8 @@ export default function App() {
         window.removeEventListener('message', handleChatwootMessage);
         clearTimeout(timer);
     };
-}, []);
+}, [appContext]); // <-- necessário!
+
 
     useEffect(() => {
         if (appContext?.contact) {
