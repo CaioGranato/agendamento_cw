@@ -1,3 +1,11 @@
+// Adicione no topo do arquivo:
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import 'dayjs/locale/pt-br';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.locale('pt-br');
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, saveScheduledMessagesForContact, sendToN8n, fileToActionAttachment } from './services/schedulingService';
@@ -156,7 +164,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
     onEdit: (id: string) => void;
     onCancel: (id: string) => void;
 }) => {
-    const { id, datetime, message: text, attachments, status } = message;
+    const { id, datetime, message: text, attachments, status, lastUpdate } = message;
 
     const formattedDate = new Date(datetime).toLocaleString('pt-BR', {
         day: '2-digit',
@@ -186,6 +194,12 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
                             <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400">
                                 {attachments.map(att => <li key={att.name}>{att.name}</li>)}
                             </ul>
+                        </div>
+                    )}
+                    {/* Mostra o campo Last update */}
+                    {lastUpdate && (
+                        <div className="text-xs text-gray-500 mt-2">
+                            Last update: {dayjs(lastUpdate).tz('America/Sao_Paulo').format('DD/MM/YYYY - HH:mm:ss')}
                         </div>
                     )}
                 </div>
@@ -245,11 +259,14 @@ export default function App() {
     const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
         if (!appContext) return;
 
-        const fullMessage: ScheduledMessage = {
-            ...newMessageData,
-            contactId: appContext.contact.id,
-            conversationId: appContext.conversation.id,
-        };
+    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
+
+    const fullMessage: ScheduledMessage = {
+        ...newMessageData,
+        contactId: appContext.contact.id,
+        conversationId: appContext.conversation.id,
+        lastUpdate: nowSaoPaulo, // Atualize aqui
+};
 
         const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
 
@@ -287,29 +304,33 @@ export default function App() {
     };
 
     const handleCancelSchedule = (id: string) => {
-        if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+    if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
-        // Aqui, idealmente, você também chamaria um webhook para informar o n8n do cancelamento.
-        // Por ora, só atualiza o status localmente.
+    // Aqui, idealmente, você também chamaria um webhook para informar o n8n do cancelamento.
+    // Por ora, só atualiza o status localmente.
 
-        const updatedMessages = scheduledMessages.map(msg =>
-            msg.id === id ? { ...msg, status: 'Cancelado' as ScheduleStatus } : msg
-        );
+    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
 
-        setScheduledMessages(updatedMessages);
-        saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
-        alert('Agendamento cancelado.');
-    };
+    const updatedMessages = scheduledMessages.map(msg =>
+        msg.id === id
+            ? { ...msg, status: 'Cancelado' as ScheduleStatus, lastUpdate: nowSaoPaulo }
+            : msg
+    );
 
-    if (!appContext) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-red-500">
-                Não foi possível carregar os dados do contato.
-            </div>
-        );
-    }
+    setScheduledMessages(updatedMessages);
+    saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
+    alert('Agendamento cancelado.');
+};
 
+if (!appContext) {
     return (
+        <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-red-500">
+            Não foi possível carregar os dados do contato.
+        </div>
+    );
+}
+
+return (
         <div className="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen p-4 font-sans">
             <div className="max-w-4xl mx-auto">
                 <ContactInfo contact={appContext.contact} />
