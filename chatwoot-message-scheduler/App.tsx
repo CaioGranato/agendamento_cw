@@ -10,6 +10,10 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, saveScheduledMessagesForContact, sendToN8n, fileToActionAttachment } from './services/schedulingService';
 
+
+console.log("Data original:", dataSelecionada);
+console.log("Data ajustada:", dayjs(dataSelecionada).tz('America/Sao_Paulo').format());
+
 // --- ICONS ---
 const Icon = ({ path, className = 'w-6 h-6' }: { path: string, className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
