@@ -208,16 +208,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
 export default function App() {
     const [appContext, setAppContext] = useState<AppContext | null>(null);
     const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
-    const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'waiting'>('loading');
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
-
-    // REFERÊNCIAS PARA O TIMER E STATUS ATUALIZADO
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const statusRef = useRef(status);
-
-    useEffect(() => {
-        statusRef.current = status;
-    }, [status]);
 
     useEffect(() => {
         const handleChatwootMessage = (event: MessageEvent) => {
@@ -226,9 +217,6 @@ export default function App() {
                 const data = JSON.parse(event.data);
                 if (data.event === 'appContext') {
                     setAppContext(data.data as AppContext);
-                    setStatus('ready');
-                    // LIMPA O TIMER!
-                    if (timerRef.current) clearTimeout(timerRef.current);
                 }
             } catch (error) {
                 console.warn('[DEBUG] Erro ao processar mensagem:', error);
@@ -238,18 +226,10 @@ export default function App() {
         window.addEventListener('message', handleChatwootMessage);
         window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
 
-        timerRef.current = setTimeout(() => {
-            if (statusRef.current === 'loading') {
-                setStatus('waiting');
-            }
-        }, 3000000);
-
         return () => {
             window.removeEventListener('message', handleChatwootMessage);
-            if (timerRef.current) clearTimeout(timerRef.current);
         };
     }, []);
-
 
     useEffect(() => {
         if (appContext?.contact) {
@@ -257,7 +237,7 @@ export default function App() {
             setScheduledMessages(messages);
         }
     }, [appContext]);
-    
+
     const sortedMessages = useMemo(() => {
         return [...scheduledMessages].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
     }, [scheduledMessages]);
@@ -322,16 +302,12 @@ export default function App() {
         alert('Agendamento cancelado.');
     };
 
-    if (status === 'loading') {
-        return <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-slate-500">Carregando...</div>;
-    }
-    
-    if (status === 'waiting') {
-        return <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-slate-500 p-4 text-center">Aguardando informações do Chatwoot. Certifique-se de que o app está sendo executado em uma conversa.</div>;
-    }
-
     if (!appContext) {
-        return <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-red-500">Não foi possível carregar os dados do contato.</div>;
+        return (
+            <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-red-500">
+                Não foi possível carregar os dados do contato.
+            </div>
+        );
     }
 
     return (
