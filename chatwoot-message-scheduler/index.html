@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chatwoot Message Scheduler</title>
+    
+    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -17,21 +19,35 @@
         }
       }
     </script>
+    
+    <!-- Load Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="importmap">
+    
+    <!--
+      Import Map: Tells the browser where to find 'react' and 'react-dom/client'
+      when they are imported in the application's JavaScript files.
+      This uses stable React 18 versions and removes conflicting entries.
+    -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/"
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
   }
 }
 </script>
-</head>
-  <body class="dark">
+  </head>
+  
+  <body class="dark bg-slate-100 dark:bg-slate-900">
     <div id="root"></div>
+    
+    <!--
+      Load the main application script.
+      esm.sh is a CDN that transpiles the TSX file from GitHub into JavaScript
+      that the browser can understand on-the-fly.
+    -->
     <script type="module" src="https://esm.sh/gh/CaioGranato/agendamento_cw@main/chatwoot-message-scheduler/index.tsx"></script>
   </body>
 </html>
