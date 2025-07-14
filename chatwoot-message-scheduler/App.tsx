@@ -80,7 +80,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         };
 
         onSubmit(newSchedule);
-        
+
         if (!isEditing) {
             setMessage('');
             setDatetime('');
@@ -119,7 +119,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                         onChange={handleFileChange}
                         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
-                     {attachments.length > 0 && (
+                    {attachments.length > 0 && (
                         <ul className="mt-2 text-sm text-slate-500 dark:text-slate-400 space-y-1">
                             {attachments.map(att => (
                                 <li key={att.name} className="flex justify-between items-center">
@@ -165,7 +165,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
         hour: '2-digit',
         minute: '2-digit',
     });
-    
+
     const canBeModified = status === 'Agendado';
 
     return (
@@ -180,7 +180,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
                         </div>
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{text}</p>
-                     {attachments.length > 0 && (
+                    {attachments.length > 0 && (
                         <div className="mt-2">
                             <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Anexos:</p>
                             <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400">
@@ -242,7 +242,6 @@ export default function App() {
         return [...scheduledMessages].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
     }, [scheduledMessages]);
 
-
     const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
         if (!appContext) return;
 
@@ -257,7 +256,7 @@ export default function App() {
         if (success) {
             let updatedMessages;
             const existingIndex = scheduledMessages.findIndex(m => m.id === fullMessage.id);
-            
+
             if (existingIndex > -1) {
                 updatedMessages = [...scheduledMessages];
                 updatedMessages[existingIndex] = fullMessage;
@@ -266,7 +265,7 @@ export default function App() {
                 updatedMessages = [...scheduledMessages, fullMessage];
                 alert('Agendamento realizado com sucesso!');
             }
-            
+
             setScheduledMessages(updatedMessages);
             saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
             setEditingMessage(null); // Exit editing mode
@@ -274,7 +273,7 @@ export default function App() {
             alert('Erro ao agendar mensagem. Verifique a conexão e tente novamente.');
         }
     }, [appContext, scheduledMessages]);
-    
+
     const handleSetEditMode = (id: string) => {
         const messageToEdit = scheduledMessages.find(m => m.id === id);
         if (messageToEdit) {
@@ -282,21 +281,21 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
-    
+
     const handleCancelEdit = () => {
         setEditingMessage(null);
     };
 
     const handleCancelSchedule = (id: string) => {
         if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
-        
-        // Here you would ideally also call a webhook to inform n8n of the cancellation.
-        // For now, we just update the status locally.
-        
-        const updatedMessages = scheduledMessages.map(msg => 
+
+        // Aqui, idealmente, você também chamaria um webhook para informar o n8n do cancelamento.
+        // Por ora, só atualiza o status localmente.
+
+        const updatedMessages = scheduledMessages.map(msg =>
             msg.id === id ? { ...msg, status: 'Cancelado' as ScheduleStatus } : msg
         );
-        
+
         setScheduledMessages(updatedMessages);
         saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
         alert('Agendamento cancelado.');
