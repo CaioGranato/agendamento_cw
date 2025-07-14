@@ -28,14 +28,20 @@ export const saveScheduledMessagesForContact = (contactId: number, messages: Sch
   }
 };
 
-export const sendToN8n = async (scheduleData: ScheduledMessage, contact: Contact, conversation: Conversation): Promise<boolean> => {
+export const sendToN8n = async (
+  scheduleData: ScheduledMessage,
+  contact: Contact,
+  conversation: Conversation
+): Promise<boolean> => {
+  // Garante que o campo lastUpdate está sempre presente e usado como timestamp principal
   const payload = {
-    contact,
-    conversation,
     schedule: {
       ...scheduleData,
-      timestamp: new Date().toISOString(),
-    }
+      // timestamp é sempre igual ao lastUpdate para facilitar rastreio e garantir timezone correto
+      timestamp: scheduleData.lastUpdate ?? new Date().toISOString(),
+    },
+    contact,
+    conversation,
   };
 
   try {
