@@ -262,10 +262,11 @@ export default function App() {
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
 
     const fullMessage: ScheduledMessage = {
-        ...newMessageData,
-        contactId: appContext.contact.id,
-        conversationId: appContext.conversation.id,
-        lastUpdate: nowSaoPaulo, // Atualize aqui
+    ...newMessageData,
+    datetime: dayjs(newMessageData.datetime).tz('America/Sao_Paulo').toISOString(),
+    contactId: appContext.contact.id,
+    conversationId: appContext.conversation.id,
+    lastUpdate: nowSaoPaulo,
 };
 
         const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
