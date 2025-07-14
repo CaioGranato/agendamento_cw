@@ -34,12 +34,14 @@ export const sendToN8n = async (
   conversation: Conversation
 ): Promise<boolean> => {
   // Garante que o campo lastUpdate está sempre presente e usado como timestamp principal
+  const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
   const payload = {
     schedule: {
       ...scheduleData,
-      // timestamp é sempre igual ao lastUpdate para facilitar rastreio e garantir timezone correto
-      timestamp: scheduleData.lastUpdate ?? new Date().toISOString(),
-    },
+    lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
+    lastUpdateUTC: nowSaoPaulo.toISOString(), // UTC (opcional)
+    timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
+  },
     contact,
     conversation,
   };
