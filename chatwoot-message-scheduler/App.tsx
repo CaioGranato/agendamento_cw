@@ -22,36 +22,49 @@ export default function App() {
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
 
     useEffect(() => {
-        const handleChatwootMessage = (event: MessageEvent) => {
-            try {
-                if (typeof event.data !== 'string') return;
-                const data = JSON.parse(event.data);
-                if (data.event === 'appContext') {
-                    setAppContext(data.data as AppContext);
-                    setStatus('ready');
-                }
-            } catch (error) {
-                // Ignore non-JSON messages
+    const handleChatwootMessage = (event: MessageEvent) => {
+        console.log('[ChatwootApp] Mensagem recebida:', event.data); // 🔍 Log 1
+
+        try {
+            if (typeof event.data !== 'string') {
+                console.warn('[ChatwootApp] Dados recebidos não são string:', event.data); // 🔍 Log 2
+                return;
             }
-        };
 
-        window.addEventListener('message', handleChatwootMessage);
-        window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            const data = JSON.parse(event.data);
+            console.log('[ChatwootApp] Dados parseados com sucesso:', data); // 🔍 Log 3
 
-        const timer = setTimeout(() => {
-            setStatus(currentStatus => {
-                if (currentStatus === 'loading' && !appContext) {
-                    return 'waiting';
-                }
-                return currentStatus;
-            });
-        }, 3000);
+            if (data.event === 'appContext') {
+                console.log('[ChatwootApp] AppContext recebido:', data.data); // 🔥 Log 4
+                setAppContext(data.data as AppContext);
+                setStatus('ready');
+            } else {
+                console.warn('[ChatwootApp] Evento não é appContext:', data.event); // 🔍 Log 5
+            }
 
-        return () => {
-            window.removeEventListener('message', handleChatwootMessage);
-            clearTimeout(timer);
-        };
-    }, []);
+        } catch (error) {
+            console.error('[ChatwootApp] Erro ao fazer parse do JSON:', error); // ❌ Log 6
+        }
+    };
+
+    window.addEventListener('message', handleChatwootMessage);
+    window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*'); // 🔄 Enviando requisição para o Chatwoot
+
+    const timer = setTimeout(() => {
+        setStatus(currentStatus => {
+            if (currentStatus === 'loading' && !appContext) {
+                console.warn('[ChatwootApp] Nenhum contexto recebido após 3 segundos. Mudando status para waiting.'); // ⏱️ Log 7
+                return 'waiting';
+            }
+            return currentStatus;
+        });
+    }, 3000);
+
+    return () => {
+        window.removeEventListener('message', handleChatwootMessage);
+        clearTimeout(timer);
+    };
+}, []);
 
     useEffect(() => {
         if (appContext?.contact) {
