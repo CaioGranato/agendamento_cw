@@ -211,8 +211,13 @@ export default function App() {
     const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'waiting'>('loading');
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
 
-    // TIMER REFERENCE FOR TIMEOUT
+    // REFERÊNCIAS PARA O TIMER E STATUS ATUALIZADO
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const statusRef = useRef(status);
+
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
 
     useEffect(() => {
         const handleChatwootMessage = (event: MessageEvent) => {
@@ -233,21 +238,16 @@ export default function App() {
         window.addEventListener('message', handleChatwootMessage);
         window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
 
-        // TIMER FOR FALLBACK
         timerRef.current = setTimeout(() => {
-            setStatus(currentStatus => {
-                if (currentStatus === 'loading' && !appContext) {
-                    return 'waiting';
-                }
-                return currentStatus;
-            });
+            if (statusRef.current === 'loading') {
+                setStatus('waiting');
+            }
         }, 3000);
 
         return () => {
             window.removeEventListener('message', handleChatwootMessage);
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-    // Depende apenas de [] para rodar uma vez ao montar!
     }, []);
 
 
