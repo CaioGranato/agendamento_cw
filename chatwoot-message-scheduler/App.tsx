@@ -22,30 +22,35 @@ export default function App() {
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
 
     useEffect(() => {
+    console.log('[DEBUG] Iniciando listener de mensagens do Chatwoot');
+
     const handleChatwootMessage = (event: MessageEvent) => {
         try {
+            console.log('[DEBUG] Mensagem recebida:', event.data);
             if (typeof event.data !== 'string') return;
+
             const data = JSON.parse(event.data);
             if (data.event === 'appContext') {
-                console.log('📨 appContext recebido:', data.data);
+                console.log('[DEBUG] appContext recebido:', data.data);
                 setAppContext(data.data as AppContext);
                 setStatus('ready');
             }
         } catch (error) {
-            console.warn('❌ Erro ao processar mensagem:', error);
+            console.warn('[DEBUG] Erro ao processar mensagem:', error);
         }
     };
 
     window.addEventListener('message', handleChatwootMessage);
+    console.log('[DEBUG] Enviando solicitação para Chatwoot...');
     window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
 
     const timer = setTimeout(() => {
-        setStatus(prev => {
-            if (prev === 'loading' && !appContext) {
-                console.log('⏰ Timeout atingido — appContext ainda não chegou');
+        setStatus(currentStatus => {
+            if (currentStatus === 'loading' && !appContext) {
+                console.log('[DEBUG] Nenhuma resposta do Chatwoot após 3s');
                 return 'waiting';
             }
-            return prev;
+            return currentStatus;
         });
     }, 3000);
 
@@ -53,7 +58,7 @@ export default function App() {
         window.removeEventListener('message', handleChatwootMessage);
         clearTimeout(timer);
     };
-}, [appContext]); // <-- necessário!
+}, []);
 
 
     useEffect(() => {
