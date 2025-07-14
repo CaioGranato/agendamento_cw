@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -30,13 +31,15 @@
       This version is corrected to only use stable and non-conflicting React 18.
     -->
     <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
-        }
-      }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
   </head>
   
   <body class="dark bg-slate-100 dark:bg-slate-900">
@@ -44,8 +47,8 @@
     
     <!--
       Load the main application script.
-      esm.sh is a CDN that transpiles the TSX file from GitHub into JavaScript
-      that the browser can understand on-the-fly.
+      esm.sh is a CDN that handles transpiling all TSX/TS files and bundling
+      all dependencies (like React) into a single JS file the browser can run.
     -->
     <script type="module" src="https://esm.sh/gh/CaioGranato/agendamento_cw@main/chatwoot-message-scheduler/index.tsx"></script>
   </body>
