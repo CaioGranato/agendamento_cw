@@ -1,0 +1,5 @@
+{
+  "name": "Chatwoot Message Scheduler",
+  "description": "An application to schedule messages to be sent to contacts within Chatwoot. It allows creating, editing, and canceling scheduled messages with text and attachments.",
+  "requestFramePermissions": []
+}
