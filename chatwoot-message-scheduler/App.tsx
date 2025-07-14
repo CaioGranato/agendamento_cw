@@ -211,62 +211,44 @@ export default function App() {
     const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'waiting'>('loading');
     const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
 
-    useEffect(() => {
-    console.log('[DEBUG] Iniciando listener de mensagens do Chatwoot');
-
-    const handleChatwootMessage = (event: MessageEvent) => {
-        try {
-            console.log('[DEBUG] Mensagem recebida:', event.data);
-            if (typeof event.data !== 'string') return;
-
-            const data = JSON.parse(event.data);
-            if (data.event === 'appContext') {
-                console.log('[DEBUG] appContext recebido:', data.data);
-                setAppContext(data.data as AppContext);
-                setStatus('ready');
-            }
-        } catch (error) {
-            console.warn('[DEBUG] Erro ao processar mensagem:', error);
-        }
-    };
-
-    window.addEventListener('message', handleChatwootMessage);
-    console.log('[DEBUG] Enviando solicitação para Chatwoot...');
-    window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
-
+    // TIMER REFERENCE FOR TIMEOUT
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-useEffect(() => {
-  const handleChatwootMessage = (event: MessageEvent) => {
-    try {
-      if (typeof event.data !== 'string') return;
-      const data = JSON.parse(event.data);
-      if (data.event === 'appContext') {
-        setAppContext(data.data as AppContext);
-        setStatus('ready');
-        // Limpe o timer aqui!
-        if (timerRef.current) clearTimeout(timerRef.current);
-      }
-    } catch (error) {}
-  };
+    useEffect(() => {
+        const handleChatwootMessage = (event: MessageEvent) => {
+            try {
+                if (typeof event.data !== 'string') return;
+                const data = JSON.parse(event.data);
+                if (data.event === 'appContext') {
+                    setAppContext(data.data as AppContext);
+                    setStatus('ready');
+                    // LIMPA O TIMER!
+                    if (timerRef.current) clearTimeout(timerRef.current);
+                }
+            } catch (error) {
+                console.warn('[DEBUG] Erro ao processar mensagem:', error);
+            }
+        };
 
-  window.addEventListener('message', handleChatwootMessage);
-  window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+        window.addEventListener('message', handleChatwootMessage);
+        window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
 
-  timerRef.current = setTimeout(() => {
-    setStatus(currentStatus => {
-      if (currentStatus === 'loading' && !appContext) {
-        return 'waiting';
-      }
-      return currentStatus;
-    });
-  }, 3000);
+        // TIMER FOR FALLBACK
+        timerRef.current = setTimeout(() => {
+            setStatus(currentStatus => {
+                if (currentStatus === 'loading' && !appContext) {
+                    return 'waiting';
+                }
+                return currentStatus;
+            });
+        }, 3000);
 
-  return () => {
-    window.removeEventListener('message', handleChatwootMessage);
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
-}, []);
+        return () => {
+            window.removeEventListener('message', handleChatwootMessage);
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    // Depende apenas de [] para rodar uma vez ao montar!
+    }, []);
 
 
     useEffect(() => {
