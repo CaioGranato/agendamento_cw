@@ -242,7 +242,7 @@ export default function App() {
             if (statusRef.current === 'loading') {
                 setStatus('waiting');
             }
-        }, 3000);
+        }, 3000000);
 
         return () => {
             window.removeEventListener('message', handleChatwootMessage);
