@@ -10,7 +10,6 @@ const Icon = ({ path, className = 'w-6 h-6' }: { path: string, className?: strin
     </svg>
 );
 
-const UserCircleIcon = () => <Icon path="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636M12 21a9 9 0 110-18 9 9 0 010 18z" />;
 const PhoneIcon = () => <Icon path="M6.62 10.79a15.45 15.45 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.02.74-.25 1.02l-2.2 2.2z" />;
 const ClockIcon = () => <Icon path="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" className="w-5 h-5 mr-1" />;
 const PencilIcon = () => <Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" className="w-4 h-4" />;
@@ -259,18 +258,14 @@ export default function App() {
         window.addEventListener('message', handleChatwootMessage);
         window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         
-        // Timeout to handle case where chatwoot context is not received
         const timer = setTimeout(() => {
-            if (status === 'loading') {
-                setStatus('waiting');
-            }
+            setStatus(currentStatus => currentStatus === 'loading' ? 'waiting' : currentStatus);
         }, 3000);
 
         return () => {
             window.removeEventListener('message', handleChatwootMessage);
             clearTimeout(timer);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
