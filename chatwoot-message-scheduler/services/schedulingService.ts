@@ -43,6 +43,10 @@ export const sendToN8n = async (
 ): Promise<boolean> => {
   // Garante que o campo lastUpdate está sempre presente e usado como timestamp principal
   const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
+  
+  // Debug: verificar se scheduleData contém edit_id
+  console.log('scheduleData before payload:', scheduleData);
+  
   const payload = {
     schedule: {
       ...scheduleData,
@@ -53,6 +57,9 @@ export const sendToN8n = async (
     contact,
     conversation,
   };
+  
+  // Debug: verificar payload final
+  console.log('payload.schedule:', payload.schedule);
 
   try {
     // Usar o URL correto diretamente sem proxy

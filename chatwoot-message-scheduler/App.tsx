@@ -292,6 +292,9 @@ export default function App() {
             edit_id: newEditId,
             previous_edit_ids: previousEditIds,
         };
+        
+        // Debug: verificar se edit_id foi adicionado
+        console.log('fullMessage with edit_id:', fullMessage);
     }
 
     const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
