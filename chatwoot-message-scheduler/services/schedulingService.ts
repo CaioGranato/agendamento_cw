@@ -61,7 +61,8 @@ export const sendToN8n = async (
       headers: {
         'Content-Type': 'application/json',
       },
-      mode: 'no-cors' // Adicionar esta linha
+      body: JSON.stringify(payload),
+      mode: 'no-cors'
     });
     
     // Como estamos usando mode: 'no-cors', não podemos verificar response.ok
