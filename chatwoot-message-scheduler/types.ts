@@ -33,4 +33,7 @@ export interface ScheduledMessage {
   contactId: number;
   conversationId: number;
   lastUpdate?: string; // Novo campo para a última atualização (ISO string)
+  edit_id?: string; // ID gerado quando o agendamento é editado
+  previous_edit_ids?: string[]; // Array com histórico de edit_ids anteriores
+  exc_id?: string; // ID gerado quando o agendamento é cancelado
 }
