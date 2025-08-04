@@ -257,19 +257,19 @@ export default function App() {
     }, [scheduledMessages]);
 
     const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
-        if (!appContext) return;
+    if (!appContext) return;
 
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
 
     const fullMessage: ScheduledMessage = {
-    ...newMessageData,
-    ddatetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').toISOString(),
-    contactId: appContext.contact.id,
-    conversationId: appContext.conversation.id,
-    lastUpdate: nowSaoPaulo,
-};
+        ...newMessageData,
+        datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').toISOString(),
+        contactId: appContext.contact.id,
+        conversationId: appContext.conversation.id,
+        lastUpdate: nowSaoPaulo,
+    };
 
-        const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
+    const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
 
         if (success) {
             let updatedMessages;
@@ -304,23 +304,37 @@ export default function App() {
         setEditingMessage(null);
     };
 
-    const handleCancelSchedule = (id: string) => {
+    const handleCancelSchedule = async (id: string) => {
     if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
-    // Aqui, idealmente, você também chamaria um webhook para informar o n8n do cancelamento.
-    // Por ora, só atualiza o status localmente.
-
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
-
-    const updatedMessages = scheduledMessages.map(msg =>
-        msg.id === id
-            ? { ...msg, status: 'Cancelado' as ScheduleStatus, lastUpdate: nowSaoPaulo }
-            : msg
-    );
-
-    setScheduledMessages(updatedMessages);
-    saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
-    alert('Agendamento cancelado.');
+    
+    // Encontra a mensagem que será cancelada
+    const messageToCancel = scheduledMessages.find(msg => msg.id === id);
+    
+    if (!messageToCancel) return;
+    
+    // Atualiza o status e o timestamp
+    const updatedMessage = { 
+        ...messageToCancel, 
+        status: 'Cancelado' as ScheduleStatus, 
+        lastUpdate: nowSaoPaulo 
+    };
+    
+    // Envia para o n8n para notificar sobre o cancelamento
+    const success = await sendToN8n(updatedMessage, appContext.contact, appContext.conversation);
+    
+    if (success) {
+        const updatedMessages = scheduledMessages.map(msg =>
+            msg.id === id ? updatedMessage : msg
+        );
+        
+        setScheduledMessages(updatedMessages);
+        saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
+        alert('Agendamento cancelado com sucesso.');
+    } else {
+        alert('Erro ao cancelar agendamento. Verifique a conexão e tente novamente.');
+    }
 };
 
 if (!appContext) {

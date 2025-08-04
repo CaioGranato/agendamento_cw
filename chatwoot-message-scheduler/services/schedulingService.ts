@@ -45,10 +45,10 @@ export const sendToN8n = async (
   const payload = {
     schedule: {
       ...scheduleData,
-    lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
-    lastUpdateUTC: nowSaoPaulo.toISOString(), // UTC (opcional)
-    timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
-  },
+      lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
+      lastUpdateUTC: nowSaoPaulo.toISOString(), // UTC (opcional)
+      timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
+    },
     contact,
     conversation,
   };
