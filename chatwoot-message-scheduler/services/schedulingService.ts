@@ -56,7 +56,7 @@ export const sendToN8n = async (
   try {
     // Usar um serviço de proxy CORS
     const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const webhookUrl = 'https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
+    const webhookUrl = 'https://n8n.odtravel.com.br/webhook-test/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
     
     const response = await fetch(proxyUrl + webhookUrl, {
       method: 'POST',
