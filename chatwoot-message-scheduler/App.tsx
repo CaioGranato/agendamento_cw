@@ -240,7 +240,7 @@ export default function App() {
                     setAppContext(data.data as AppContext);
                 }
             } catch (error) {
-                console.warn('[DEBUG] Erro ao processar mensagem:', error);
+                console.warn('Erro ao processar mensagem:', error);
             }
         };
 
@@ -298,8 +298,6 @@ export default function App() {
             previous_edit_ids: previousEditIds,
         };
         
-        // Debug: verificar se edit_id foi adicionado
-        console.log('fullMessage with edit_id:', fullMessage);
     }
 
     const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
