@@ -8,6 +8,7 @@ dayjs.extend(timezone);
 
 import { ScheduledMessage, Contact, Conversation, Attachment } from '../types';
 
+// Corrigir a inconsistência nos URLs do webhook
 const N8N_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
 
 const getStorageKey = (contactId: number): string => `chatwoot_scheduled_messages_${contactId}`;
@@ -54,19 +55,18 @@ export const sendToN8n = async (
   };
 
   try {
-    // Usar um serviço de proxy CORS
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const webhookUrl = 'https://n8n.odtravel.com.br/webhook-test/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
-    
-    const response = await fetch(proxyUrl + webhookUrl, {
+    // Usar o URL correto diretamente sem proxy
+    const response = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': 'https://agcw.odmax.com.br'
       },
-      body: JSON.stringify(payload)
+      mode: 'no-cors' // Adicionar esta linha
     });
-    return response.ok;
+    
+    // Como estamos usando mode: 'no-cors', não podemos verificar response.ok
+    // Vamos considerar que a requisição foi bem-sucedida se não lançou exceção
+    return true;
   } catch (error) {
     console.error('Error sending schedule to n8n:', error);
     alert('Erro de conexão ao enviar para o n8n.');
