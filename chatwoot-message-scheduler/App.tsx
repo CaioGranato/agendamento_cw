@@ -260,14 +260,33 @@ export default function App() {
     if (!appContext) return;
 
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
+    const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
+    const isEditing = !!existingMessage;
 
-    const fullMessage: ScheduledMessage = {
+    let fullMessage: ScheduledMessage = {
         ...newMessageData,
         datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').toISOString(),
         contactId: appContext.contact.id,
         conversationId: appContext.conversation.id,
         lastUpdate: nowSaoPaulo,
     };
+
+    // Se está editando, adicionar edit_id e gerenciar histórico
+    if (isEditing && existingMessage) {
+        const newEditId = window.crypto.randomUUID();
+        
+        // Se já existe um edit_id, mover para o histórico
+        const previousEditIds = existingMessage.previous_edit_ids || [];
+        if (existingMessage.edit_id) {
+            previousEditIds.push(existingMessage.edit_id);
+        }
+        
+        fullMessage = {
+            ...fullMessage,
+            edit_id: newEditId,
+            previous_edit_ids: previousEditIds,
+        };
+    }
 
     const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
 
@@ -314,11 +333,15 @@ export default function App() {
     
     if (!messageToCancel) return;
     
-    // Atualiza o status e o timestamp
+    // Gera exc_id único para o cancelamento
+    const excId = window.crypto.randomUUID();
+    
+    // Atualiza o status, timestamp e adiciona exc_id
     const updatedMessage = { 
         ...messageToCancel, 
         status: 'Cancelado' as ScheduleStatus, 
-        lastUpdate: nowSaoPaulo 
+        lastUpdate: nowSaoPaulo,
+        exc_id: excId
     };
     
     // Envia para o n8n para notificar sobre o cancelamento
