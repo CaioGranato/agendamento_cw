@@ -54,10 +54,15 @@ export const sendToN8n = async (
   };
 
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
+    // Usar um serviço de proxy CORS
+    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+    const webhookUrl = 'https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
+    
+    const response = await fetch(proxyUrl + webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Origin': 'https://agcw.odmax.com.br'
       },
       body: JSON.stringify(payload)
     });
