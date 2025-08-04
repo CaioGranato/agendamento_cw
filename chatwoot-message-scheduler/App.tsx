@@ -85,6 +85,12 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             message,
             attachments,
             status: 'Agendado',
+            // Preservar campos extras quando editando
+            ...(editingMessage && {
+                edit_id: editingMessage.edit_id,
+                previous_edit_ids: editingMessage.previous_edit_ids,
+                exc_id: editingMessage.exc_id,
+            }),
         };
 
         onSubmit(newSchedule);
