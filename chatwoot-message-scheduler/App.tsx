@@ -271,7 +271,7 @@ export default function App() {
 
     let fullMessage: ScheduledMessage = {
         ...newMessageData,
-        datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').toISOString(),
+        datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss'),
         contactId: appContext.contact.id,
         conversationId: appContext.conversation.id,
         lastUpdate: nowSaoPaulo,
