@@ -90,6 +90,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                 edit_id: editingMessage.edit_id,
                 previous_edit_ids: editingMessage.previous_edit_ids,
                 exc_id: editingMessage.exc_id,
+                scheduled_for: editingMessage.scheduled_for,
             }),
         };
 
@@ -269,12 +270,16 @@ export default function App() {
     const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
     const isEditing = !!existingMessage;
 
+    // Calcular scheduled_for sempre em horário de São Paulo
+    const scheduledForSaoPaulo = dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+
     let fullMessage: ScheduledMessage = {
         ...newMessageData,
         datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss'),
         contactId: appContext.contact.id,
         conversationId: appContext.conversation.id,
         lastUpdate: nowSaoPaulo,
+        scheduled_for: scheduledForSaoPaulo, // Horário garantido em São Paulo
     };
 
     // Se está editando, adicionar edit_id e gerenciar histórico
@@ -350,7 +355,9 @@ export default function App() {
         ...messageToCancel, 
         status: 'Cancelado' as ScheduleStatus, 
         lastUpdate: nowSaoPaulo,
-        exc_id: excId
+        exc_id: excId,
+        // Manter o scheduled_for original se existir
+        scheduled_for: messageToCancel.scheduled_for
     };
     
     // Envia para o n8n para notificar sobre o cancelamento
