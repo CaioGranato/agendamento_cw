@@ -45,13 +45,13 @@ export const sendToN8n = async (
   const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
   
   
-  // Garantir que datetime está no formato de São Paulo antes de ser serializado
-  const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss');
+  // Calcular datetime_sao_paulo automaticamente baseado no datetime original
+  const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
   
   const payload = {
     schedule: {
       ...scheduleData,
-      datetime: datetimeSaoPaulo, // Forçar datetime em São Paulo
+      datetime_sao_paulo: datetimeSaoPaulo, // Novo campo com horário de São Paulo
       lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
       lastUpdateUTC: nowSaoPaulo.toISOString(), // UTC (opcional)
       timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'), // São Paulo local time
