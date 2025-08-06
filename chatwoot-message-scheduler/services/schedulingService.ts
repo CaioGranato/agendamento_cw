@@ -9,7 +9,7 @@ dayjs.extend(timezone);
 import { ScheduledMessage, Contact, Conversation, Attachment } from '../types';
 
 // Corrigir a inconsistência nos URLs do webhook
-const N8N_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
+const N8N_WEBHOOK_URL = 'https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9';
 
 const getStorageKey = (contactId: number): string => `chatwoot_scheduled_messages_${contactId}`;
 
