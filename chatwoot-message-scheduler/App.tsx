@@ -8,7 +8,8 @@ dayjs.extend(timezone);
 dayjs.locale('pt-br');
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
-import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage, fileToActionAttachment } from './services/schedulingService';
+import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
+import { sendAlertWebhook, insertInlineMedia } from './services/webhookService';
 
 // --- ICONS ---
 const Icon = ({ path, className = 'w-6 h-6' }: { path: string, className?: string }) => (
@@ -37,14 +38,13 @@ const ContactInfo = ({ contact }: { contact: Contact }) => (
 );
 
 const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
-    onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => void;
+    onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>, createAlert?: boolean) => void;
     onCancelEdit: () => void;
     editingMessage: ScheduledMessage | null;
 }) => {
     const [message, setMessage] = useState('');
     const [datetime, setDatetime] = useState('');
-    const [attachments, setAttachments] = useState<Attachment[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [createAlert, setCreateAlert] = useState(false);
 
     const isEditing = !!editingMessage;
 
@@ -52,24 +52,18 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         if (editingMessage) {
             setMessage(editingMessage.message);
             setDatetime(editingMessage.datetime);
-            setAttachments(editingMessage.attachments);
         } else {
             setMessage('');
             setDatetime('');
-            setAttachments([]);
+            setCreateAlert(false);
         }
     }, [editingMessage]);
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            const filePromises = Array.from(event.target.files).map(fileToActionAttachment);
-            const newAttachments = await Promise.all(filePromises);
-            setAttachments(prev => [...prev, ...newAttachments]);
-        }
-    };
-
-    const removeAttachment = (name: string) => {
-        setAttachments(prev => prev.filter(att => att.name !== name));
+    // Support for inline media like ChatWoot
+    const handleMediaInsert = (type: 'audio' | 'image' | 'file', content?: string) => {
+        const mediaTag = type === 'audio' ? '🎵' : type === 'image' ? '🖼️' : '📎';
+        const placeholder = `${mediaTag} [${type.toUpperCase()}]`;
+        setMessage(prev => prev + (prev ? '\n' : '') + placeholder);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -83,7 +77,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             id: editingMessage?.id || window.crypto.randomUUID(),
             datetime,
             message,
-            attachments,
+            attachments: [], // Remove attachment functionality
             status: 'Agendado',
             // Preservar campos extras quando editando
             ...(editingMessage && {
@@ -94,15 +88,12 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             }),
         };
 
-        onSubmit(newSchedule);
+        onSubmit(newSchedule, createAlert);
 
         if (!isEditing) {
             setMessage('');
             setDatetime('');
-            setAttachments([]);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
+            setCreateAlert(false);
         }
     };
 
@@ -110,47 +101,75 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">{isEditing ? 'Editar Agendamento' : 'Novo Agendamento'}</h3>
             <div className="space-y-4">
-                <textarea
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    placeholder="Digite sua mensagem..."
-                    className="w-full p-2 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                    rows={4}
-                    required
-                ></textarea>
-                <input
-                    type="datetime-local"
-                    value={datetime}
-                    onChange={e => setDatetime(e.target.value)}
-                    className="w-full p-2 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                    required
-                />
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Anexos</label>
+                    <div className="flex items-center mb-2 space-x-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Mensagem</label>
+                        <div className="flex space-x-2">
+                            <button
+                                type="button"
+                                onClick={() => handleMediaInsert('audio')}
+                                className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded transition"
+                                title="Inserir áudio"
+                            >
+                                🎵 Áudio
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleMediaInsert('image')}
+                                className="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded transition"
+                                title="Inserir imagem"
+                            >
+                                🖼️ Imagem
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleMediaInsert('file')}
+                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded transition"
+                                title="Inserir arquivo"
+                            >
+                                📎 Arquivo
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                        placeholder="Digite sua mensagem... Use os botões acima para inserir mídia inline."
+                        className="w-full p-3 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        rows={6}
+                        required
+                    ></textarea>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Data e Hora</label>
                     <input
-                        type="file"
-                        multiple
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        type="datetime-local"
+                        value={datetime}
+                        onChange={e => setDatetime(e.target.value)}
+                        className="w-full p-2 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        required
                     />
-                    {attachments.length > 0 && (
-                        <ul className="mt-2 text-sm text-slate-500 dark:text-slate-400 space-y-1">
-                            {attachments.map(att => (
-                                <li key={att.name} className="flex justify-between items-center">
-                                    <span>{att.name}</span>
-                                    <button type="button" onClick={() => removeAttachment(att.name)} className="text-red-500 hover:text-red-700">&times;</button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
                 </div>
             </div>
-            <div className="flex justify-end items-center mt-6 space-x-2">
-                {isEditing && (
-                    <button type="button" onClick={onCancelEdit} className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold transition">Cancelar Edição</button>
-                )}
-                <button type="submit" className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition">{isEditing ? 'Atualizar' : 'Agendar'}</button>
+            <div className="space-y-3 mt-6">
+                <div className="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="createAlert"
+                        checked={createAlert}
+                        onChange={(e) => setCreateAlert(e.target.checked)}
+                        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                    />
+                    <label htmlFor="createAlert" className="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                        ⚠️ Criar Alerta
+                    </label>
+                </div>
+                <div className="flex justify-end items-center space-x-2">
+                    {isEditing && (
+                        <button type="button" onClick={onCancelEdit} className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold transition">Cancelar Edição</button>
+                    )}
+                    <button type="submit" className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition">{isEditing ? 'Atualizar' : 'Agendar'}</button>
+                </div>
             </div>
         </form>
     );
@@ -195,14 +214,6 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
                         </div>
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{text}</p>
-                    {attachments.length > 0 && (
-                        <div className="mt-2">
-                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Anexos:</p>
-                            <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400">
-                                {attachments.map(att => <li key={att.name}>{att.name}</li>)}
-                            </ul>
-                        </div>
-                    )}
                     {/* Mostra o campo Last update */}
                     {lastUpdate && (
                         <div className="text-xs text-gray-500 mt-2">
@@ -223,6 +234,47 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
             </div>
         </div>
     );
+};
+
+// Alert webhook function
+const sendAlertWebhook = async (
+    scheduleData: ScheduledMessage,
+    contact: Contact,
+    conversation: Conversation
+): Promise<boolean> => {
+    const ALERT_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b';
+    
+    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
+    const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+    
+    const payload = {
+        schedule: {
+            ...scheduleData,
+            datetime_sao_paulo: datetimeSaoPaulo,
+            lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'),
+            lastUpdateUTC: nowSaoPaulo.toISOString(),
+            timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'),
+        },
+        contact,
+        conversation,
+    };
+
+    try {
+        const response = await fetch(ALERT_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            mode: 'no-cors'
+        });
+        
+        console.log('Alert webhook sent successfully');
+        return true;
+    } catch (error) {
+        console.error('Error sending alert webhook:', error);
+        return false;
+    }
 };
 
 // --- MAIN APP ---
@@ -270,7 +322,7 @@ export default function App() {
         return [...scheduledMessages].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
     }, [scheduledMessages]);
 
-    const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
+    const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>, createAlert = false) => {
         if (!appContext) return;
 
         const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
@@ -305,6 +357,11 @@ export default function App() {
 
         try {
             let success;
+            
+            // Send to alert webhook if checkbox is checked
+            if (createAlert) {
+                await sendAlertWebhook(fullMessage, appContext.contact, appContext.conversation);
+            }
             if (isEditing) {
                 success = await updateScheduledMessage(fullMessage.id, fullMessage, appContext.contact, appContext.conversation);
             } else {
