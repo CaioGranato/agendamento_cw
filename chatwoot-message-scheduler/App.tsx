@@ -153,57 +153,23 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
     }, []);
 
     const startRecording = async () => {
-        try {
-            // Tentar diferentes métodos para funcionr dentro do Chatwoot
-            let stream;
-            
-            // Método 1: Tentar getUserMedia normal
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (error) {
-                console.warn('getUserMedia falhou, tentando método alternativo:', error);
-                
-                // Método 2: Tentar com contexto de window pai (se estiver em iframe)
-                try {
-                    if (window.parent && window.parent !== window) {
-                        // Estamos em iframe, tentar comunicar com parent
-                        const parentUserMedia = window.parent.navigator?.mediaDevices?.getUserMedia;
-                        if (parentUserMedia) {
-                            stream = await parentUserMedia.call(window.parent.navigator.mediaDevices, { audio: true });
-                        } else {
-                            throw new Error('Parent getUserMedia não disponível');
-                        }
-                    } else {
-                        throw new Error('Não está em iframe');
-                    }
-                } catch (parentError) {
-                    console.warn('Método parent falhou:', parentError);
-                    
-                    // Método 3: Fallback para input file tipo audio
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'audio/*';
-                    input.style.display = 'none';
-                    
-                    input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                                const base64 = reader.result as string;
-                                onAudioRecorded(URL.createObjectURL(file), base64);
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                        document.body.removeChild(input);
-                    };
-                    
-                    document.body.appendChild(input);
-                    input.click();
-                    return; // Sair da função pois usou fallback
-                }
-            }
+        // Se estiver em iframe, ir direto para file selection
+        if (window.parent !== window) {
+            console.log('Detectado iframe - usando seleção de arquivo');
+            handleFileAudioSelection();
+            return;
+        }
 
+        // Se não estiver em iframe, tentar gravação normal
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
+            
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
@@ -231,42 +197,43 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
         } catch (error) {
             console.error('Erro ao acessar microfone:', error);
             
-            // Mostrar mensagem mais específica e oferecer alternativa
-            const errorMessage = `
-Erro ao acessar o microfone. Isso pode acontecer quando o app está dentro do Chatwoot.
-
-Alternativas:
-1. Abrir o app em nova aba
-2. Permitir microfone no navegador
-3. Usar o seletor de arquivo de áudio que aparecerá
-
-Deseja continuar com seleção de arquivo de áudio?
-            `;
-            
-            if (confirm(errorMessage.trim())) {
-                // Fallback para seleção de arquivo
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'audio/*';
-                input.style.display = 'none';
-                
-                input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64 = reader.result as string;
-                            onAudioRecorded(URL.createObjectURL(file), base64);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                    document.body.removeChild(input);
-                };
-                
-                document.body.appendChild(input);
-                input.click();
-            }
+            // Fallback para file selection mesmo fora do iframe
+            alert('Erro ao acessar o microfone. Usando seleção de arquivo de áudio.');
+            handleFileAudioSelection();
         }
+    };
+
+    const handleFileAudioSelection = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'audio/*,video/*';
+        input.multiple = false;
+        input.style.display = 'none';
+        
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                // Verificar se é um arquivo de áudio válido
+                if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64 = reader.result as string;
+                        onAudioRecorded(URL.createObjectURL(file), base64);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('Por favor, selecione um arquivo de áudio válido.');
+                }
+            }
+            document.body.removeChild(input);
+        };
+        
+        input.oncancel = () => {
+            document.body.removeChild(input);
+        };
+        
+        document.body.appendChild(input);
+        input.click();
     };
 
     const stopRecording = () => {
@@ -342,11 +309,11 @@ Deseja continuar com seleção de arquivo de áudio?
                     type="button"
                     onClick={startRecording}
                     className="relative p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
-                    title={isInIframe ? "Gravar áudio (pode solicitar upload de arquivo)" : "Gravar áudio"}
+                    title={isInIframe ? "Selecionar arquivo de áudio" : "Gravar áudio"}
                 >
                     <MicIcon />
                     {isInIframe && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full" title="Modo iframe - pode usar seleção de arquivo"></span>
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Modo seleção de arquivo"></span>
                     )}
                 </button>
             )}
@@ -484,6 +451,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onEmojiSelect: (emoji: string) => void;
 }) => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [emojiButtonRef, setEmojiButtonRef] = useState<HTMLButtonElement | null>(null);
     const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
 
     return (
@@ -508,6 +476,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                 </button>
                 <div className="relative">
                     <button
+                        ref={setEmojiButtonRef}
                         type="button"
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                         className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
@@ -515,24 +484,43 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     >
                         <EmojiIcon />
                     </button>
-                    {showEmojiPicker && (
-                        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 z-20 min-w-max">
-                            {commonEmojis.map(emoji => (
-                                <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => {
-                                        onEmojiSelect(emoji);
-                                        setShowEmojiPicker(false);
-                                    }}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
-                    )}
                 </div>
+            </div>
+            
+            {/* Emoji Picker - Fixed Position Portal */}
+            {showEmojiPicker && emojiButtonRef && (
+                <div 
+                    className="fixed bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-3 grid grid-cols-5 gap-2 z-50"
+                    style={{
+                        bottom: `${window.innerHeight - emojiButtonRef.getBoundingClientRect().top + 10}px`,
+                        left: `${emojiButtonRef.getBoundingClientRect().left - 100}px`,
+                        minWidth: '250px'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {commonEmojis.map(emoji => (
+                        <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => {
+                                onEmojiSelect(emoji);
+                                setShowEmojiPicker(false);
+                            }}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
+                        >
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
+            )}
+            
+            {/* Click outside to close */}
+            {showEmojiPicker && (
+                <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowEmojiPicker(false)}
+                />
+            )}
             </div>
         </div>
     );
