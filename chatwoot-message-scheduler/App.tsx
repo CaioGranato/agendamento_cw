@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
 import { sendAlertWebhook } from './services/webhookService';
@@ -134,9 +133,15 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [isInIframe, setIsInIframe] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Detectar se está em iframe
+    useEffect(() => {
+        setIsInIframe(window.parent !== window);
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -149,7 +154,56 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
     const startRecording = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Tentar diferentes métodos para funcionr dentro do Chatwoot
+            let stream;
+            
+            // Método 1: Tentar getUserMedia normal
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (error) {
+                console.warn('getUserMedia falhou, tentando método alternativo:', error);
+                
+                // Método 2: Tentar com contexto de window pai (se estiver em iframe)
+                try {
+                    if (window.parent && window.parent !== window) {
+                        // Estamos em iframe, tentar comunicar com parent
+                        const parentUserMedia = window.parent.navigator?.mediaDevices?.getUserMedia;
+                        if (parentUserMedia) {
+                            stream = await parentUserMedia.call(window.parent.navigator.mediaDevices, { audio: true });
+                        } else {
+                            throw new Error('Parent getUserMedia não disponível');
+                        }
+                    } else {
+                        throw new Error('Não está em iframe');
+                    }
+                } catch (parentError) {
+                    console.warn('Método parent falhou:', parentError);
+                    
+                    // Método 3: Fallback para input file tipo audio
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'audio/*';
+                    input.style.display = 'none';
+                    
+                    input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                const base64 = reader.result as string;
+                                onAudioRecorded(URL.createObjectURL(file), base64);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                        document.body.removeChild(input);
+                    };
+                    
+                    document.body.appendChild(input);
+                    input.click();
+                    return; // Sair da função pois usou fallback
+                }
+            }
+
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
@@ -176,7 +230,42 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
             }, 1000);
         } catch (error) {
             console.error('Erro ao acessar microfone:', error);
-            alert('Erro ao acessar o microfone. Verifique as permissões.');
+            
+            // Mostrar mensagem mais específica e oferecer alternativa
+            const errorMessage = `
+Erro ao acessar o microfone. Isso pode acontecer quando o app está dentro do Chatwoot.
+
+Alternativas:
+1. Abrir o app em nova aba
+2. Permitir microfone no navegador
+3. Usar o seletor de arquivo de áudio que aparecerá
+
+Deseja continuar com seleção de arquivo de áudio?
+            `;
+            
+            if (confirm(errorMessage.trim())) {
+                // Fallback para seleção de arquivo
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'audio/*';
+                input.style.display = 'none';
+                
+                input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result as string;
+                            onAudioRecorded(URL.createObjectURL(file), base64);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    document.body.removeChild(input);
+                };
+                
+                document.body.appendChild(input);
+                input.click();
+            }
         }
     };
 
@@ -252,10 +341,13 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
                 <button
                     type="button"
                     onClick={startRecording}
-                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
-                    title="Gravar áudio"
+                    className="relative p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
+                    title={isInIframe ? "Gravar áudio (pode solicitar upload de arquivo)" : "Gravar áudio"}
                 >
                     <MicIcon />
+                    {isInIframe && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full" title="Modo iframe - pode usar seleção de arquivo"></span>
+                    )}
                 </button>
             )}
         </div>
@@ -328,8 +420,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
 
-        const listItem = '
-• ';
+        const listItem = '\n• ';
         const newText = beforeText + listItem + afterText;
         onTextChange(newText);
 
@@ -390,9 +481,10 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onAudioRecorded: (audioUrl: string, base64: string) => void;
     onImageSelect: () => void;
     onFileSelect: () => void;
-    onEmojiSelect: (emoji: EmojiClickData) => void;
+    onEmojiSelect: (emoji: string) => void;
 }) => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
 
     return (
         <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
@@ -424,17 +516,20 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                         <EmojiIcon />
                     </button>
                     {showEmojiPicker && (
-                        <div className="absolute bottom-12 left-0 z-20">
-                           <EmojiPicker 
-                                onEmojiClick={(emojiData) => {
-                                    onEmojiSelect(emojiData);
-                                    setShowEmojiPicker(false);
-                                }}
-                                theme="auto"
-                                emojiStyle="native"
-                                width="350px"
-                                height="450px"
-                           />
+                        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 z-20 min-w-max">
+                            {commonEmojis.map(emoji => (
+                                <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => {
+                                        onEmojiSelect(emoji);
+                                        setShowEmojiPicker(false);
+                                    }}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -486,7 +581,6 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     const content = result.split(',')[1];
                     setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
                     
-                    // Adiciona feedback visual na área de texto
                     const fileTypeText = type === 'image' ? 'imagem' : 'arquivo';
                     setMessage(prev => prev + (prev ? '\n' : '') + `[${fileTypeText}: ${file.name}]`);
                 };
@@ -502,11 +596,10 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     const handleAudioRecorded = (audioUrl: string, base64: string) => {
         const content = base64.split(',')[1];
         setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content, base64 }]);
-        setMessage(prev => prev + (prev ? '
-' : '') + '🎵 [Áudio gravado]');
+        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
     };
 
-    const handleEmojiSelect = (emojiData: EmojiClickData) => {
+    const handleEmojiSelect = (emoji: string) => {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -515,11 +608,11 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
         
-        const newText = beforeText + emojiData.emoji + afterText;
+        const newText = beforeText + emoji + afterText;
         setMessage(newText);
         
         setTimeout(() => {
-            textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
+            textarea.setSelectionRange(start + emoji.length, start + emoji.length);
             textarea.focus();
         }, 0);
     };
