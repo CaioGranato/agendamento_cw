@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+  agendamento-cw-api:
+    image: node:18-alpine
+    working_dir: /app/api
+    command: sh -c "apk add --no-cache git && git clone https://github.com/CaioGranato/agendamento_cw.git /tmp/app && cp -r /tmp/app/api/* /app/ && npm install && npm start"
+    
+    networks:
+      - odmaxnet
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
+      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
+      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - CORS_ORIGIN=*
+      - TZ=America/Sao_Paulo
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+      restart_policy:
+        condition: any
+        delay: 15s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com`)"
+        - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=cloudflare"
+        - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
+        - "traefik.docker.network=odmaxnet"
+
+networks:
+  odmaxnet:
+    external: true
+    name: odmaxnet
