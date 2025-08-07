@@ -1,15 +1,15 @@
-// Adicione no topo do arquivo:
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
+import { AppContext, Contact, Conversation, ScheduledMessage, Attachment, ScheduleStatus } from './types';
+import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
+import { sendAlertWebhook, insertInlineMedia } from './services/webhookService';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('pt-br');
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
-import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
-import { sendAlertWebhook, insertInlineMedia } from './services/webhookService';
 
 // --- ICONS ---
 const Icon = ({ path, className = 'w-6 h-6' }: { path: string, className?: string }) => (
@@ -37,8 +37,6 @@ const ContactInfo = ({ contact }: { contact: Contact }) => (
     </div>
 );
 
-// Adicionar no início do arquivo junto com os outros imports
-import { useState, useRef, useEffect } from 'react';
 
 // Componente AudioRecorder (já existe, mantido)
 const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string, base64: string) => void }) => {
@@ -174,7 +172,9 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             if (file) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setAttachments(prev => [...prev, { type: file.type, name: file.name, data: reader.result as string }]);
+                    const result = reader.result as string;
+                    const content = result.split(',')[1]; // Remove data:mime;base64, prefix
+                    setAttachments(prev => [...prev, { type: file.type, name: file.name, content }]);
                 };
                 reader.readAsDataURL(file);
             }
@@ -183,8 +183,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     };
 
     const handleAudioRecorded = (audioUrl: string, base64: string) => {
-        setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', data: base64 }]);
-        // Opcional: Adicionar nota no texto
+        const content = base64.split(',')[1]; // Remove data:audio/wav;base64, prefix
+        setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content }]);
         setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
     };
 
@@ -338,51 +338,6 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
     );
 };
 
-// Remover esta função hardcoded do App.tsx
-// Alert webhook function
-const sendAlertWebhook = async (
-    scheduleData: ScheduledMessage,
-    contact: Contact,
-    conversation: Conversation
-): Promise<boolean> => {
-    // Remover URL hardcoded e usar a função do webhookService.ts
-    // const ALERT_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b';
-    
-    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
-    const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
-    
-    const payload = {
-        schedule: {
-            ...scheduleData,
-            datetime_sao_paulo: datetimeSaoPaulo,
-            lastUpdate: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'),
-            lastUpdateUTC: nowSaoPaulo.toISOString(),
-            timestamp: nowSaoPaulo.format('YYYY-MM-DDTHH:mm:ss'),
-        },
-        contact,
-        conversation,
-    };
-
-    try {
-        const response = await fetch(ALERT_WEBHOOK_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-            mode: 'no-cors'
-        });
-        
-        console.log('Alert webhook sent successfully');
-        return true;
-    } catch (error) {
-        console.error('Error sending alert webhook:', error);
-        return false;
-    }
-};
-
-// E substituir a chamada direta por:
-import { sendAlertWebhook } from './services/webhookService';
 
 // --- MAIN APP ---
 export default function App() {
