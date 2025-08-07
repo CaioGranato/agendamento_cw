@@ -40,8 +40,8 @@ const ContactInfo = ({ contact }: { contact: Contact }) => (
 // Adicionar no início do arquivo junto com os outros imports
 import { useState, useRef, useEffect } from 'react';
 
-// Componente do Gravador de Áudio
-const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string) => void }) => {
+// Componente AudioRecorder (já existe, mantido)
+const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string, base64: string) => void }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -72,8 +72,13 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                onAudioRecorded(audioUrl);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64 = reader.result as string;
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    onAudioRecorded(audioUrl, base64);
+                };
+                reader.readAsDataURL(audioBlob);
                 stream.getTracks().forEach(track => track.stop());
                 setRecordingTime(0);
                 if (timerRef.current) clearInterval(timerRef.current);
@@ -143,6 +148,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     const [message, setMessage] = useState('');
     const [datetime, setDatetime] = useState('');
     const [createAlert, setCreateAlert] = useState(false);
+    const [attachments, setAttachments] = useState<Attachment[]>([]); // Restaurar suporte a anexos
 
     const isEditing = !!editingMessage;
 
@@ -150,18 +156,36 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         if (editingMessage) {
             setMessage(editingMessage.message);
             setDatetime(editingMessage.datetime);
+            setAttachments(editingMessage.attachments || []);
         } else {
             setMessage('');
             setDatetime('');
             setCreateAlert(false);
+            setAttachments([]);
         }
     }, [editingMessage]);
 
-    // Support for inline media like ChatWoot
-    const handleMediaInsert = (type: 'audio' | 'image' | 'file', content?: string) => {
-        const mediaTag = type === 'audio' ? '🎵' : type === 'image' ? '🖼️' : '📎';
-        const placeholder = `${mediaTag} [${type.toUpperCase()}]`;
-        setMessage(prev => prev + (prev ? '\n' : '') + placeholder);
+    const handleAttachment = (type: 'image' | 'file') => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = type === 'image' ? 'image/*' : '*/*';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setAttachments(prev => [...prev, { type: file.type, name: file.name, data: reader.result as string }]);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    };
+
+    const handleAudioRecorded = (audioUrl: string, base64: string) => {
+        setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', data: base64 }]);
+        // Opcional: Adicionar nota no texto
+        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -175,7 +199,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             id: editingMessage?.id || window.crypto.randomUUID(),
             datetime,
             message,
-            attachments: [], // Remove attachment functionality
+            attachments, // Incluir anexos reais
             status: 'Agendado',
             // Preservar campos extras quando editando
             ...(editingMessage && {
@@ -192,50 +216,10 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             setMessage('');
             setDatetime('');
             setCreateAlert(false);
+            setAttachments([]);
         }
     };
 
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    setAudioChunks((chunks) => [...chunks, event.data]);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    if (reader.result) {
-                        handleMediaInsert('audio', reader.result as string);
-                    }
-                };
-                reader.readAsDataURL(audioBlob);
-                setAudioChunks([]);
-            };
-
-            mediaRecorder.start();
-            setIsRecording(true);
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
-            alert('Erro ao acessar o microfone. Verifique as permissões.');
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-            setIsRecording(false);
-        }
-    };
-
-    // Adicionar botão de gravação junto aos outros botões de mídia
     return (
         <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">{isEditing ? 'Editar Agendamento' : 'Novo Agendamento'}</h3>
@@ -244,30 +228,9 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     <div className="flex items-center mb-2 space-x-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Mensagem</label>
                         <div className="flex space-x-2">
-                            <button
-                                type="button"
-                                onClick={() => handleMediaInsert('audio')}
-                                className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded transition"
-                                title="Inserir áudio"
-                            >
-                                🎵 Áudio
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleMediaInsert('image')}
-                                className="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded transition"
-                                title="Inserir imagem"
-                            >
-                                🖼️ Imagem
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleMediaInsert('file')}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded transition"
-                                title="Inserir arquivo"
-                            >
-                                📎 Arquivo
-                            </button>
+                            <AudioRecorder onAudioRecorded={handleAudioRecorded} /> {/* Integrar gravador */}
+                            <button type="button" onClick={() => handleAttachment('image')} className="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded transition" title="Anexar imagem">🖼️ Imagem</button>
+                            <button type="button" onClick={() => handleAttachment('file')} className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded transition" title="Anexar arquivo">📎 Arquivo</button>
                         </div>
                     </div>
                     <textarea
