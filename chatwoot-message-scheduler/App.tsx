@@ -37,6 +37,104 @@ const ContactInfo = ({ contact }: { contact: Contact }) => (
     </div>
 );
 
+// Adicionar no início do arquivo junto com os outros imports
+import { useState, useRef, useEffect } from 'react';
+
+// Componente do Gravador de Áudio
+const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string) => void }) => {
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+            }
+        };
+    }, []);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                onAudioRecorded(audioUrl);
+                stream.getTracks().forEach(track => track.stop());
+                setRecordingTime(0);
+                if (timerRef.current) clearInterval(timerRef.current);
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            timerRef.current = window.setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } catch (error) {
+            console.error('Erro ao acessar microfone:', error);
+            alert('Erro ao acessar o microfone. Verifique as permissões.');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex items-center space-x-2">
+            {isRecording ? (
+                <>
+                    <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+                        <span className="animate-pulse text-red-500">REC</span>
+                        <span className="text-sm">{formatTime(recordingTime)}</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={stopRecording}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                        title="Parar gravação"
+                    >
+                        ⏹️
+                    </button>
+                </>
+            ) : (
+                <button
+                    type="button"
+                    onClick={startRecording}
+                    className="text-gray-500 hover:text-gray-600 transition-colors"
+                    title="Iniciar gravação"
+                >
+                    🎤
+                </button>
+            )}
+        </div>
+    );
+};
+
+// Modificar o SchedulerForm para incluir o AudioRecorder
 const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>, createAlert?: boolean) => void;
     onCancelEdit: () => void;
