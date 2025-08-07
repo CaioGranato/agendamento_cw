@@ -11,20 +11,20 @@ services:
         git clone https://github.com/CaioGranato/agendamento_cw.git /tmp/repo &&
         cp -r /tmp/repo/api/* /app/ &&
         echo 'Installing dependencies...' &&
-        npm install &&
+        npm install --production --no-optional &&
         echo 'Starting server...' &&
         npm start
       "
     
     networks:
-      - odmaxnet
+      - your-network
 
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
-      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CORS_ORIGIN=*
       - TZ=America/Sao_Paulo
 
@@ -36,11 +36,11 @@ services:
           - node.role == manager
       resources:
         limits:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "1.0"
+          memory: 1024M
         reservations:
-          cpus: "0.1"
-          memory: 128M
+          cpus: "0.2"
+          memory: 256M
       restart_policy:
         condition: any
         delay: 15s
@@ -48,23 +48,14 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
-        - "traefik.constraint-label=odmaxnet"
-        - "traefik.docker.network=odmaxnet"
-        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com.br`)"
+        - "traefik.docker.network=your-network"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`your-api-domain.com`)"
         - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
-        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=cloudflare"
-        - "traefik.http.routers.agendamento-cw-api.service=agendamento-cw-api"
+        - "traefik.http.routers.agendamento-cw-api.tls=true"
+        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
-        - "traefik.http.services.agendamento-cw-api.loadbalancer.server.scheme=http"
-
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 networks:
-  odmaxnet:
+  your-network:
     external: true
-    name: odmaxnet
+    name: your-network

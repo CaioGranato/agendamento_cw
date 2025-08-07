@@ -7,7 +7,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres',
+  connectionString: process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/database',
   ssl: false, // Disable SSL for internal Docker network
   max: 20,
   idleTimeoutMillis: 30000,

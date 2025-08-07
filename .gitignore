@@ -2,6 +2,14 @@
 .env
 .env.local
 .env.production
+.env.development
+
+# Docker compose with credentials
+docker-compose.*.yml
+!docker-compose.production.yml
+
+# Local development files
+*.local.yml
 
 # Node modules
 node_modules/

@@ -70,9 +70,9 @@ docker service logs agendamento-cw_agendamento-cw-api
 # API Configuration
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
-N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+DATABASE_URL=postgresql://username:password@host:5432/database
+N8N_WEBHOOK_URL=https://your-n8n-domain.com/webhook/your-webhook-id
+GEMINI_API_KEY=your_gemini_api_key_here
 CORS_ORIGIN=*
 TZ=America/Sao_Paulo
 ```
