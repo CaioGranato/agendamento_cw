@@ -3,40 +3,117 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
-import { AppContext, Contact, Conversation, ScheduledMessage, Attachment, ScheduleStatus } from './types';
+import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
-import { sendAlertWebhook, insertInlineMedia } from './services/webhookService';
+import { sendAlertWebhook } from './services/webhookService';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('pt-br');
 
-// --- ICONS ---
-const Icon = ({ path, className = 'w-5 h-5' }: { path: string, className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-        <path fillRule="evenodd" d={path} clipRule="evenodd" />
+// --- SIMPLE SVG ICONS ---
+const PhoneIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
     </svg>
 );
 
-const PhoneIcon = () => <Icon path="M6.62 10.79a15.45 15.45 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.02.74-.25 1.02l-2.2 2.2z" />;
-const ClockIcon = () => <Icon path="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" className="w-4 h-4 mr-1" />;
-const PencilIcon = () => <Icon path="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" className="w-4 h-4" />;
-const TrashIcon = () => <Icon path="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" className="w-4 h-4" />;
+const ClockIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12,6 12,12 16,14"/>
+    </svg>
+);
+
+const PencilIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="m18 2 4 4-14 14H4v-4L18 2z"/>
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="3,6 5,6 21,6"/>
+        <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <line x1="10" y1="11" x2="10" y2="17"/>
+        <line x1="14" y1="11" x2="14" y2="17"/>
+    </svg>
+);
 
 // Formatting Icons
-const BoldIcon = () => <Icon path="M15 18H7.5c-2.5 0-4.5-2-4.5-4.5S5 9 7.5 9H15" className="w-4 h-4" />;
-const ItalicIcon = () => <Icon path="M9 5h6M7 19h6m2-14l-4 14" className="w-4 h-4" />;
-const StrikeIcon = () => <Icon path="M9 5h6m-6 14h6m-6-7h6" className="w-4 h-4" />;
-const ListIcon = () => <Icon path="M8 4a4 4 0 100 8 4 4 0 000-8zM6 4a2 2 0 11-4 0 2 2 0 014 0zM6 20a2 2 0 11-4 0 2 2 0 014 0zM8 18a4 4 0 100-8 4 4 0 000 8z" className="w-4 h-4" />;
-const CaseIcon = () => <Icon path="M4 6h16M4 12h16M4 18h16" className="w-4 h-4" />;
+const BoldIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+        <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+    </svg>
+);
+
+const ItalicIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="19" y1="4" x2="10" y2="4"/>
+        <line x1="14" y1="20" x2="5" y2="20"/>
+        <line x1="15" y1="4" x2="9" y2="20"/>
+    </svg>
+);
+
+const StrikeIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M16 4H9a3 3 0 0 0-2.83 4"/>
+        <path d="M14 12a4 4 0 0 1 0 8H6"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+    </svg>
+);
+
+const ListIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="8" y1="6" x2="21" y2="6"/>
+        <line x1="8" y1="12" x2="21" y2="12"/>
+        <line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6" x2="3.01" y2="6"/>
+        <line x1="3" y1="12" x2="3.01" y2="12"/>
+        <line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>
+);
 
 // Media Icons  
-const MicIcon = () => <Icon path="M12 2a3 3 0 013 3v6a3 3 0 11-6 0V5a3 3 0 013-3z M8 11a4 4 0 108 0" className="w-4 h-4" />;
-const ImageIcon = () => <Icon path="M20.25 10.25V4.25A2.25 2.25 0 0018 2H6a2.25 2.25 0 00-2.25 2.25v15.5A2.25 2.25 0 006 22h12a2.25 2.25 0 002.25-2.25V13.5H15a2.25 2.25 0 01-2.25-2.25V8.25A2.25 2.25 0 0115 6h3.25z" className="w-4 h-4" />;
-const AttachIcon = () => <Icon path="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 119.547 7.417l-10.833 10.833a1.5 1.5 0 002.122 2.121L18.375 12.74z" className="w-4 h-4" />;
-const EmojiIcon = () => <Icon path="M15.75 9.75a3 3 0 11-6 0 3 3 0 016 0zM8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" className="w-4 h-4" />;
-const PlayIcon = () => <Icon path="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" className="w-4 h-4" />;
-const StopIcon = () => <Icon path="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" className="w-4 h-4" />;
+const MicIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="m12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+);
+
+const ImageIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <circle cx="9" cy="9" r="2"/>
+        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </svg>
+);
+
+const AttachIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+    </svg>
+);
+
+const EmojiIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+        <line x1="9" y1="9" x2="9.01" y2="9"/>
+        <line x1="15" y1="9" x2="15.01" y2="9"/>
+    </svg>
+);
+
+
+const StopIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+    </svg>
+);
 
 // Contact Info Component
 const ContactInfo = ({ contact }: { contact: Contact }) => (
@@ -58,7 +135,7 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
-    const timerRef = useRef<number | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         return () => {
@@ -84,13 +161,8 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64 = reader.result as string;
-                    const url = URL.createObjectURL(audioBlob);
-                    setAudioUrl(url);
-                };
-                reader.readAsDataURL(audioBlob);
+                const url = URL.createObjectURL(audioBlob);
+                setAudioUrl(url);
                 stream.getTracks().forEach(track => track.stop());
                 setRecordingTime(0);
                 if (timerRef.current) clearInterval(timerRef.current);
@@ -98,7 +170,7 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
             mediaRecorder.start();
             setIsRecording(true);
-            timerRef.current = window.setInterval(() => {
+            timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
         } catch (error) {
@@ -116,7 +188,6 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
     const sendAudio = () => {
         if (audioUrl) {
-            // Convert blob URL to base64
             fetch(audioUrl)
                 .then(res => res.blob())
                 .then(blob => {
@@ -142,13 +213,13 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
             {isRecording ? (
                 <>
                     <div className="flex items-center space-x-2 bg-red-100 dark:bg-red-900 px-3 py-1 rounded-full">
-                        <span className="animate-pulse text-red-500">REC</span>
-                        <span className="text-sm">{formatTime(recordingTime)}</span>
+                        <span className="animate-pulse text-red-500 text-sm font-bold">REC</span>
+                        <span className="text-sm text-red-600">{formatTime(recordingTime)}</span>
                     </div>
                     <button
                         type="button"
                         onClick={stopRecording}
-                        className="p-2 text-red-500 hover:text-red-600 transition-colors rounded"
+                        className="p-2 text-red-500 hover:text-red-600 transition-colors rounded hover:bg-red-50"
                         title="Parar gravação"
                     >
                         <StopIcon />
@@ -156,13 +227,13 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
                 </>
             ) : audioUrl ? (
                 <>
-                    <audio controls className="h-8">
+                    <audio controls className="h-8 max-w-48">
                         <source src={audioUrl} type="audio/wav" />
                     </audio>
                     <button
                         type="button"
                         onClick={sendAudio}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
                         title="Enviar áudio"
                     >
                         Enviar
@@ -170,7 +241,7 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
                     <button
                         type="button"
                         onClick={() => setAudioUrl(null)}
-                        className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+                        className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
                         title="Cancelar"
                     >
                         Cancelar
@@ -180,7 +251,7 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
                 <button
                     type="button"
                     onClick={startRecording}
-                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded"
+                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
                     title="Gravar áudio"
                 >
                     <MicIcon />
@@ -192,7 +263,7 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
 
 // Text Formatting Component
 const TextFormatting = ({ textareaRef, onTextChange }: { 
-    textareaRef: React.RefObject<HTMLTextAreaElement>; 
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>; 
     onTextChange: (text: string) => void;
 }) => {
     const applyFormatting = (prefix: string, suffix?: string) => {
@@ -214,7 +285,6 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
 
         onTextChange(newText);
         
-        // Restore cursor position
         setTimeout(() => {
             const newCursorPos = start + prefix.length + selectedText.length + (suffix?.length || 0);
             textarea.setSelectionRange(newCursorPos, newCursorPos);
@@ -235,7 +305,6 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
         
-        // Toggle between upper and lower case
         const newSelectedText = selectedText === selectedText.toUpperCase() 
             ? selectedText.toLowerCase() 
             : selectedText.toUpperCase();
@@ -273,7 +342,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
             <button
                 type="button"
                 onClick={() => applyFormatting('**', '**')}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                 title="Negrito"
             >
                 <BoldIcon />
@@ -281,7 +350,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
             <button
                 type="button"
                 onClick={() => applyFormatting('_', '_')}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                 title="Itálico"
             >
                 <ItalicIcon />
@@ -289,7 +358,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
             <button
                 type="button"
                 onClick={() => applyFormatting('~~', '~~')}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                 title="Tachado"
             >
                 <StrikeIcon />
@@ -297,7 +366,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
             <button
                 type="button"
                 onClick={toggleCase}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                 title="Maiúsculas/Minúsculas"
             >
                 <span className="text-xs font-bold">Aa</span>
@@ -305,7 +374,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
             <button
                 type="button"
                 onClick={applyList}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                 title="Lista"
             >
                 <ListIcon />
@@ -322,17 +391,16 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onEmojiSelect: (emoji: string) => void;
 }) => {
     const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
-
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     return (
-        <div className="flex items-center justify-between p-2 border-t border-gray-200 dark:border-gray-600">
-            <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
+            <div className="flex items-center space-x-3">
                 <AudioRecorder onAudioRecorded={onAudioRecorded} />
                 <button
                     type="button"
                     onClick={onImageSelect}
-                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded"
+                    className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
                     title="Imagem"
                 >
                     <ImageIcon />
@@ -340,7 +408,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                 <button
                     type="button"
                     onClick={onFileSelect}
-                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded"
+                    className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
                     title="Arquivo"
                 >
                     <AttachIcon />
@@ -349,13 +417,13 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     <button
                         type="button"
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded"
+                        className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
                         title="Emoji"
                     >
                         <EmojiIcon />
                     </button>
                     {showEmojiPicker && (
-                        <div className="absolute bottom-12 left-0 bg-white dark:bg-slate-700 border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 z-10">
+                        <div className="absolute bottom-12 left-0 bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 z-20">
                             {commonEmojis.map(emoji => (
                                 <button
                                     key={emoji}
@@ -364,7 +432,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                                         onEmojiSelect(emoji);
                                         setShowEmojiPicker(false);
                                     }}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-600 rounded text-lg"
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors"
                                 >
                                     {emoji}
                                 </button>
@@ -514,61 +582,64 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Data e Hora
-                    </label>
-                    <input
-                        type="datetime-local"
-                        value={datetime}
-                        onChange={e => setDatetime(e.target.value)}
-                        className="w-full p-2 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="flex justify-between items-center mt-6">
-                <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Ativar Alerta
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => setCreateAlert(!createAlert)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                            createAlert 
-                                ? 'bg-green-600 focus:ring-green-500' 
-                                : 'bg-red-600 focus:ring-red-500'
-                        }`}
-                    >
-                        <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                createAlert ? 'translate-x-6' : 'translate-x-1'
-                            }`}
+                {/* Layout horizontal: Data/Hora | Alerta | Botão */}
+                <div className="flex items-end space-x-4">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Data e Hora
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={datetime}
+                            onChange={e => setDatetime(e.target.value)}
+                            className="w-full p-3 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            required
                         />
-                    </button>
-                    {createAlert && (
-                        <span className="text-yellow-500 text-lg">⚠️</span>
-                    )}
-                </div>
+                    </div>
 
-                <div className="flex space-x-2">
-                    {isEditing && (
+                    <div className="flex flex-col items-center space-y-2">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Ativar Alerta
+                        </span>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                type="button"
+                                onClick={() => setCreateAlert(!createAlert)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                    createAlert 
+                                        ? 'bg-green-600 focus:ring-green-500' 
+                                        : 'bg-red-600 focus:ring-red-500'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        createAlert ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                            {createAlert && (
+                                <span className="text-yellow-500 text-lg">⚠️</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col space-y-2">
+                        {isEditing && (
+                            <button 
+                                type="button" 
+                                onClick={onCancelEdit} 
+                                className="px-4 py-3 rounded bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold transition"
+                            >
+                                Cancelar Edição
+                            </button>
+                        )}
                         <button 
-                            type="button" 
-                            onClick={onCancelEdit} 
-                            className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold transition"
+                            type="submit" 
+                            className="px-6 py-3 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
                         >
-                            Cancelar Edição
+                            {isEditing ? 'Atualizar' : 'Agendar'}
                         </button>
-                    )}
-                    <button 
-                        type="submit" 
-                        className="px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
-                    >
-                        {isEditing ? 'Atualizar' : 'Agendar'}
-                    </button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -619,7 +690,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday, hasAlert }: 
                         <span 
                             className={`font-semibold ${
                                 isToday 
-                                    ? 'text-yellow-500' 
+                                    ? 'text-yellow-600 dark:text-yellow-400' 
                                     : 'text-slate-700 dark:text-slate-300'
                             }`}
                         >
@@ -694,7 +765,6 @@ export default function App() {
             const loadMessages = async () => {
                 try {
                     const messages = await getScheduledMessagesForContact(appContext.contact.id);
-                    // Filter out cancelled/deleted messages
                     const activeMessages = messages.filter(msg => msg.status !== 'Cancelado');
                     setScheduledMessages(activeMessages);
                 } catch (error) {
@@ -705,11 +775,9 @@ export default function App() {
         }
     }, [appContext]);
 
-    // Sort messages by datetime (closest first), then organize into two columns
     const sortedMessages = useMemo(() => {
-        const now = new Date();
         return [...scheduledMessages]
-            .filter(msg => msg.status !== 'Cancelado') // Ensure no cancelled messages
+            .filter(msg => msg.status !== 'Cancelado')
             .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
     }, [scheduledMessages]);
 
@@ -838,7 +906,6 @@ export default function App() {
                                 {leftColumn.map(msg => {
                                     const messageDate = dayjs(msg.datetime).format('YYYY-MM-DD');
                                     const isToday = messageDate === today;
-                                    // Check if this message was created with alert (you might want to store this flag)
                                     const hasAlert = msg.hasAlert || false;
                                     
                                     return (
@@ -846,7 +913,7 @@ export default function App() {
                                             key={msg.id} 
                                             message={msg} 
                                             onEdit={handleSetEditMode} 
-                                            onCancel={handleCancelSchedule}
+                                            onCancel={(id: string) => handleCancelSchedule(id)}
                                             isToday={isToday}
                                             hasAlert={hasAlert}
                                         />
@@ -864,7 +931,7 @@ export default function App() {
                                             key={msg.id} 
                                             message={msg} 
                                             onEdit={handleSetEditMode} 
-                                            onCancel={handleCancelSchedule}
+                                            onCancel={(id: string) => handleCancelSchedule(id)}
                                             isToday={isToday}
                                             hasAlert={hasAlert}
                                         />
