@@ -37,4 +37,5 @@ export interface ScheduledMessage {
   previous_edit_ids?: string[]; // Array com histórico de edit_ids anteriores
   exc_id?: string; // ID gerado quando o agendamento é cancelado
   scheduled_for?: string; // Horário agendado em São Paulo (YYYY-MM-DD HH:mm:ss)
+  hasAlert?: boolean; // Campo para indicar se o alerta foi ativado
 }
