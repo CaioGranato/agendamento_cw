@@ -48,7 +48,7 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com`)"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com.br`)"
         - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
         - "traefik.http.routers.agendamento-cw-api.tls.certresolver=cloudflare"
         - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
