@@ -8,7 +8,7 @@ dayjs.extend(timezone);
 dayjs.locale('pt-br');
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
-import { getScheduledMessagesForContact, saveScheduledMessagesForContact, sendToN8n, fileToActionAttachment } from './services/schedulingService';
+import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage, fileToActionAttachment } from './services/schedulingService';
 
 // --- ICONS ---
 const Icon = ({ path, className = 'w-6 h-6' }: { path: string, className?: string }) => (
@@ -254,8 +254,15 @@ export default function App() {
 
     useEffect(() => {
         if (appContext?.contact) {
-            const messages = getScheduledMessagesForContact(appContext.contact.id);
-            setScheduledMessages(messages);
+            const loadMessages = async () => {
+                try {
+                    const messages = await getScheduledMessagesForContact(appContext.contact.id);
+                    setScheduledMessages(messages);
+                } catch (error) {
+                    console.error('Failed to load scheduled messages:', error);
+                }
+            };
+            loadMessages();
         }
     }, [appContext]);
 
@@ -264,62 +271,59 @@ export default function App() {
     }, [scheduledMessages]);
 
     const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
-    if (!appContext) return;
+        if (!appContext) return;
 
-    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
-    const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
-    const isEditing = !!existingMessage;
+        const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
+        const isEditing = !!existingMessage;
 
-    // Calcular scheduled_for sempre em horário de São Paulo
-    const scheduledForSaoPaulo = dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+        const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
+        const scheduledForSaoPaulo = dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
 
-    let fullMessage: ScheduledMessage = {
-        ...newMessageData,
-        datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss'),
-        contactId: appContext.contact.id,
-        conversationId: appContext.conversation.id,
-        lastUpdate: nowSaoPaulo,
-        scheduled_for: scheduledForSaoPaulo, // Horário garantido em São Paulo
-    };
-
-    // Se está editando, adicionar edit_id e gerenciar histórico
-    if (isEditing && existingMessage) {
-        const newEditId = window.crypto.randomUUID();
-        
-        // Se já existe um edit_id, mover para o histórico
-        const previousEditIds = existingMessage.previous_edit_ids || [];
-        if (existingMessage.edit_id) {
-            previousEditIds.push(existingMessage.edit_id);
-        }
-        
-        fullMessage = {
-            ...fullMessage,
-            edit_id: newEditId,
-            previous_edit_ids: previousEditIds,
+        let fullMessage: ScheduledMessage = {
+            ...newMessageData,
+            datetime: dayjs.tz(newMessageData.datetime, 'YYYY-MM-DDTHH:mm', 'America/Sao_Paulo').format('YYYY-MM-DDTHH:mm:ss'),
+            contactId: appContext.contact.id,
+            conversationId: appContext.conversation.id,
+            lastUpdate: nowSaoPaulo,
+            scheduled_for: scheduledForSaoPaulo,
         };
-        
-    }
 
-    const success = await sendToN8n(fullMessage, appContext.contact, appContext.conversation);
+        // Se está editando, adicionar edit_id e gerenciar histórico
+        if (isEditing && existingMessage) {
+            const newEditId = window.crypto.randomUUID();
+            const previousEditIds = existingMessage.previous_edit_ids || [];
+            if (existingMessage.edit_id) {
+                previousEditIds.push(existingMessage.edit_id);
+            }
+            
+            fullMessage = {
+                ...fullMessage,
+                edit_id: newEditId,
+                previous_edit_ids: previousEditIds,
+            };
+        }
 
-        if (success) {
-            let updatedMessages;
-            const existingIndex = scheduledMessages.findIndex(m => m.id === fullMessage.id);
-
-            if (existingIndex > -1) {
-                updatedMessages = [...scheduledMessages];
-                updatedMessages[existingIndex] = fullMessage;
-                alert('Agendamento atualizado com sucesso!');
+        try {
+            let success;
+            if (isEditing) {
+                success = await updateScheduledMessage(fullMessage.id, fullMessage, appContext.contact, appContext.conversation);
             } else {
-                updatedMessages = [...scheduledMessages, fullMessage];
-                alert('Agendamento realizado com sucesso!');
+                success = await createScheduledMessage(fullMessage, appContext.contact, appContext.conversation);
             }
 
-            setScheduledMessages(updatedMessages);
-            saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
-            setEditingMessage(null); // Exit editing mode
-        } else {
-            alert('Erro ao agendar mensagem. Verifique a conexão e tente novamente.');
+            if (success) {
+                // Reload messages from API
+                const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
+                setScheduledMessages(updatedMessages);
+                
+                alert(isEditing ? 'Agendamento atualizado com sucesso!' : 'Agendamento realizado com sucesso!');
+                setEditingMessage(null);
+            } else {
+                alert('Erro ao salvar agendamento. Verifique a conexão e tente novamente.');
+            }
+        } catch (error) {
+            console.error('Error submitting schedule:', error);
+            alert('Erro ao salvar agendamento. Verifique a conexão e tente novamente.');
         }
     }, [appContext, scheduledMessages]);
 
@@ -336,43 +340,24 @@ export default function App() {
     };
 
     const handleCancelSchedule = async (id: string) => {
-    if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+        if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
-    const nowSaoPaulo = dayjs().tz('America/Sao_Paulo').toISOString();
-    
-    // Encontra a mensagem que será cancelada
-    const messageToCancel = scheduledMessages.find(msg => msg.id === id);
-    
-    if (!messageToCancel) return;
-    
-    // Gera exc_id único para o cancelamento
-    const excId = window.crypto.randomUUID();
-    
-    // Atualiza o status, timestamp e adiciona exc_id
-    const updatedMessage = { 
-        ...messageToCancel, 
-        status: 'Cancelado' as ScheduleStatus, 
-        lastUpdate: nowSaoPaulo,
-        exc_id: excId,
-        // Manter o scheduled_for original se existir
-        scheduled_for: messageToCancel.scheduled_for
+        try {
+            const success = await deleteScheduledMessage(id);
+            
+            if (success) {
+                // Reload messages from API
+                const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
+                setScheduledMessages(updatedMessages);
+                alert('Agendamento cancelado com sucesso.');
+            } else {
+                alert('Erro ao cancelar agendamento. Verifique a conexão e tente novamente.');
+            }
+        } catch (error) {
+            console.error('Error canceling schedule:', error);
+            alert('Erro ao cancelar agendamento. Verifique a conexão e tente novamente.');
+        }
     };
-    
-    // Envia para o n8n para notificar sobre o cancelamento
-    const success = await sendToN8n(updatedMessage, appContext.contact, appContext.conversation);
-    
-    if (success) {
-        const updatedMessages = scheduledMessages.map(msg =>
-            msg.id === id ? updatedMessage : msg
-        );
-        
-        setScheduledMessages(updatedMessages);
-        saveScheduledMessagesForContact(appContext.contact.id, updatedMessages);
-        alert('Agendamento cancelado com sucesso.');
-    } else {
-        alert('Erro ao cancelar agendamento. Verifique a conexão e tente novamente.');
-    }
-};
 
 if (!appContext) {
     return (
