@@ -17,15 +17,15 @@ services:
       "
     
     networks:
-      - your-network
+      - odmaxnet
 
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=${DATABASE_URL}
-      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
-      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
+      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
+      - N8N_ALERT_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/alert-webhook-id
+      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
       - CORS_ORIGIN=*
       - TZ=America/Sao_Paulo
 
@@ -49,14 +49,45 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=your-network"
-        - "traefik.http.routers.agendamento-cw-api.rule=Host(`your-api-domain.com`)"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com.br`)"
         - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
         - "traefik.http.routers.agendamento-cw-api.tls=true"
         - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
 
+  # Novo serviço para construir o frontend
+  agendamento-cw-frontend:
+    image: node:18-alpine
+    working_dir: /app
+    command: |
+      sh -c "
+        echo 'Installing git and cloning repository...' &&
+        apk add --no-cache git curl &&
+        git clone https://github.com/CaioGranato/agendamento_cw.git /tmp/repo &&
+        cp -r /tmp/repo/chatwoot-message-scheduler/* /app/ &&
+        echo 'Installing dependencies...' &&
+        npm install &&
+        echo 'Creating .env file...' &&
+        echo 'API_BASE_URL=https://apiag.odmax.com.br/api' > .env &&
+        echo 'N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}' >> .env &&
+        echo 'Building frontend...' &&
+        npm run build
+      "
+    environment:
+      - NODE_ENV=production
+      - API_BASE_URL=https://apiag.odmax.com.br/api
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - odmaxnet
+    volumes:
+      - frontend_build:/app/dist
+
 networks:
-  your-network:
+  odmaxnet:
     external: true
-    name: your-network
+    name: odmaxnet
+
+volumes:
+  frontend_build:

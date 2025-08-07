@@ -1,6 +1,7 @@
 import { ScheduledMessage, Contact, Conversation } from '../types';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'https://your-api-domain.com/api';
+// Usar a variável de ambiente ou um fallback para a API real
+const API_BASE_URL = process.env.API_BASE_URL || 'https://apiag.odmax.com.br/api';
 
 class ApiService {
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {

@@ -338,13 +338,15 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel }: {
     );
 };
 
+// Remover esta função hardcoded do App.tsx
 // Alert webhook function
 const sendAlertWebhook = async (
     scheduleData: ScheduledMessage,
     contact: Contact,
     conversation: Conversation
 ): Promise<boolean> => {
-    const ALERT_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b';
+    // Remover URL hardcoded e usar a função do webhookService.ts
+    // const ALERT_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b';
     
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
     const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
@@ -378,6 +380,9 @@ const sendAlertWebhook = async (
         return false;
     }
 };
+
+// E substituir a chamada direta por:
+import { sendAlertWebhook } from './services/webhookService';
 
 // --- MAIN APP ---
 export default function App() {

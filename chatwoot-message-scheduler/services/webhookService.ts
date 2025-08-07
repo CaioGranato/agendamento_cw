@@ -12,7 +12,8 @@ export const sendAlertWebhook = async (
     contact: Contact,
     conversation: Conversation
 ): Promise<boolean> => {
-    const ALERT_WEBHOOK_URL = process.env.N8N_ALERT_WEBHOOK_URL;
+    // Usar a variável de ambiente ou um fallback
+    const ALERT_WEBHOOK_URL = process.env.N8N_ALERT_WEBHOOK_URL || 'https://webhookn8n.odtravel.com.br/webhook/alert-webhook-id';
     
     if (!ALERT_WEBHOOK_URL) {
         console.error('Alert webhook URL not configured');
