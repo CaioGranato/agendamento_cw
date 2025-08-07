@@ -97,6 +97,47 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         }
     };
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    setAudioChunks((chunks) => [...chunks, event.data]);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (reader.result) {
+                        handleMediaInsert('audio', reader.result as string);
+                    }
+                };
+                reader.readAsDataURL(audioBlob);
+                setAudioChunks([]);
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Erro ao acessar o microfone. Verifique as permissões.');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            setIsRecording(false);
+        }
+    };
+
+    // Adicionar botão de gravação junto aos outros botões de mídia
     return (
         <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">{isEditing ? 'Editar Agendamento' : 'Novo Agendamento'}</h3>

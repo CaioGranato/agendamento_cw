@@ -12,7 +12,12 @@ export const sendAlertWebhook = async (
     contact: Contact,
     conversation: Conversation
 ): Promise<boolean> => {
-    const ALERT_WEBHOOK_URL = 'https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b';
+    const ALERT_WEBHOOK_URL = process.env.N8N_ALERT_WEBHOOK_URL;
+    
+    if (!ALERT_WEBHOOK_URL) {
+        console.error('Alert webhook URL not configured');
+        return false;
+    }
     
     const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
     const datetimeSaoPaulo = dayjs.tz(scheduleData.datetime, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
