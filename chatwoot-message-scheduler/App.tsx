@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
 import { sendAlertWebhook } from './services/webhookService';
@@ -327,7 +328,8 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
 
-        const listItem = '\n• ';
+        const listItem = '
+• ';
         const newText = beforeText + listItem + afterText;
         onTextChange(newText);
 
@@ -388,9 +390,8 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onAudioRecorded: (audioUrl: string, base64: string) => void;
     onImageSelect: () => void;
     onFileSelect: () => void;
-    onEmojiSelect: (emoji: string) => void;
+    onEmojiSelect: (emoji: EmojiClickData) => void;
 }) => {
-    const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     return (
@@ -423,20 +424,17 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                         <EmojiIcon />
                     </button>
                     {showEmojiPicker && (
-                        <div className="absolute bottom-12 left-0 bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 z-20">
-                            {commonEmojis.map(emoji => (
-                                <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => {
-                                        onEmojiSelect(emoji);
-                                        setShowEmojiPicker(false);
-                                    }}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors"
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
+                        <div className="absolute bottom-12 left-0 z-20">
+                           <EmojiPicker 
+                                onEmojiClick={(emojiData) => {
+                                    onEmojiSelect(emojiData);
+                                    setShowEmojiPicker(false);
+                                }}
+                                theme="auto"
+                                emojiStyle="native"
+                                width="350px"
+                                height="450px"
+                           />
                         </div>
                     )}
                 </div>
@@ -477,6 +475,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = type === 'image' ? 'image/*' : '*/*';
+        input.style.display = 'none';
+    
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
@@ -484,21 +484,29 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                 reader.onloadend = () => {
                     const result = reader.result as string;
                     const content = result.split(',')[1];
-                    setAttachments(prev => [...prev, { type: file.type, name: file.name, content }]);
+                    setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
+                    
+                    // Adiciona feedback visual na área de texto
+                    const fileTypeText = type === 'image' ? 'imagem' : 'arquivo';
+                    setMessage(prev => prev + (prev ? '\n' : '') + `[${fileTypeText}: ${file.name}]`);
                 };
                 reader.readAsDataURL(file);
             }
+            document.body.removeChild(input);
         };
+    
+        document.body.appendChild(input);
         input.click();
     };
 
     const handleAudioRecorded = (audioUrl: string, base64: string) => {
         const content = base64.split(',')[1];
-        setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content }]);
-        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
+        setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content, base64 }]);
+        setMessage(prev => prev + (prev ? '
+' : '') + '🎵 [Áudio gravado]');
     };
 
-    const handleEmojiSelect = (emoji: string) => {
+    const handleEmojiSelect = (emojiData: EmojiClickData) => {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -507,11 +515,11 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
         
-        const newText = beforeText + emoji + afterText;
+        const newText = beforeText + emojiData.emoji + afterText;
         setMessage(newText);
         
         setTimeout(() => {
-            textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+            textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
             textarea.focus();
         }, 0);
     };
@@ -548,6 +556,10 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         }
     };
 
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
+
     return (
         <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">
@@ -568,7 +580,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                             ref={textareaRef}
                             value={message}
                             onChange={e => setMessage(e.target.value)}
-                            placeholder="Digite sua mensagem... Use os botões acima para inserir mídia inline."
+                            placeholder="Digite sua mensagem... Use os botões abaixo para anexar mídia."
                             className="w-full p-3 border rounded-t bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
                             rows={6}
                             required
@@ -580,6 +592,32 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                             onEmojiSelect={handleEmojiSelect}
                         />
                     </div>
+                    {attachments.length > 0 && (
+                        <div className="mt-2 p-2 border-t border-gray-200 dark:border-gray-600">
+                            <h4 className="text-sm font-semibold mb-2">Anexos:</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {attachments.map((att, index) => (
+                                    <div key={index} className="relative group bg-gray-100 dark:bg-gray-700 rounded p-1">
+                                        {att.type.startsWith('image/') ? (
+                                            <img src={att.base64} alt={att.name} className="h-16 w-16 object-cover rounded" />
+                                        ) : (
+                                            <div className="h-16 w-16 flex flex-col items-center justify-center bg-gray-200 dark:bg-gray-600 rounded">
+                                                <span className="text-xs truncate">{att.name}</span>
+                                                <span className="text-xs text-gray-500">{att.type}</span>
+                                            </div>
+                                        )}
+                                        <button 
+                                            type="button"
+                                            onClick={() => removeAttachment(index)}
+                                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            X
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Layout horizontal: Data/Hora | Alerta | Botão */}

@@ -20,6 +20,7 @@ export interface Attachment {
   name: string;
   type: string; // MIME type
   content: string; // base64 encoded string
+  base64?: string; // base64 with data URI scheme
 }
 
 export type ScheduleStatus = 'Agendado' | 'Enviado' | 'Cancelado' | 'Falhou';
