@@ -353,7 +353,8 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
 
-        const listItem = '\n• ';
+        const listItem = '
+• ';
         const newText = beforeText + listItem + afterText;
         onTextChange(newText);
 
@@ -409,8 +410,6 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
     );
 };
 
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-
 // Media Buttons Component
 const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSelect }: {
     onAudioRecorded: (audioUrl: string, base64: string) => void;
@@ -419,16 +418,54 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onEmojiSelect: (emoji: string) => void;
 }) => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-    const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const emojiButtonRef = useRef<HTMLButtonElement>(null);
+    const [pickerStyle, setPickerStyle] = useState<React.CSSProperties>({ visibility: 'hidden', position: 'fixed' });
 
-    const handleEmojiClick = (emojiData: EmojiClickData, event: MouseEvent) => {
+    const handleEmojiClick = (emojiData: EmojiClickData) => {
         onEmojiSelect(emojiData.emoji);
         setShowEmojiPicker(false);
     };
 
+    const toggleEmojiPicker = () => {
+        setShowEmojiPicker(prev => !prev);
+    };
+
+    useEffect(() => {
+        if (showEmojiPicker && emojiButtonRef.current) {
+            const buttonRect = emojiButtonRef.current.getBoundingClientRect();
+            const pickerHeight = 450; // Approximate height
+            const pickerWidth = 350;  // Approximate width
+
+            const style: React.CSSProperties = {
+                position: 'fixed',
+                zIndex: 50,
+                visibility: 'visible',
+            };
+
+            // Vertical positioning
+            if (buttonRect.top > pickerHeight) {
+                style.bottom = `${window.innerHeight - buttonRect.top}px`;
+            } else {
+                style.top = `${buttonRect.bottom}px`;
+            }
+
+            // Horizontal positioning
+            if (buttonRect.left + pickerWidth > window.innerWidth) {
+                style.right = `${window.innerWidth - buttonRect.right}px`;
+            } else {
+                style.left = `${buttonRect.left}px`;
+            }
+
+            setPickerStyle(style);
+        } else {
+            setPickerStyle({ visibility: 'hidden', position: 'fixed' });
+        }
+    }, [showEmojiPicker]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+            const pickerElement = document.querySelector('.EmojiPickerReact');
+            if (showEmojiPicker && emojiButtonRef.current && !emojiButtonRef.current.contains(event.target as Node) && pickerElement && !pickerElement.contains(event.target as Node)) {
                 setShowEmojiPicker(false);
             }
         };
@@ -437,10 +474,10 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [showEmojiPicker]);
 
     return (
-        <div className="relative flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
+        <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
             <div className="flex items-center space-x-3">
                 <AudioRecorder onAudioRecorded={onAudioRecorded} />
                 <button
@@ -461,23 +498,23 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                 </button>
                 <div className="relative">
                     <button
+                        ref={emojiButtonRef}
                         type="button"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        onClick={toggleEmojiPicker}
                         className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
                         title="Emoji"
                     >
                         <EmojiIcon />
                     </button>
-                    {showEmojiPicker && (
-                        <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-2 z-50">
-                            <EmojiPicker
-                                onEmojiClick={handleEmojiClick}
-                                autoFocusSearch={false}
-                                width={350}
-                                height={450}
-                            />
-                        </div>
-                    )}
+                    <div style={pickerStyle}>
+                        <EmojiPicker
+                            onEmojiClick={handleEmojiClick}
+                            autoFocusSearch={false}
+                            width={350}
+                            height={450}
+                            className="EmojiPickerReact"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -528,7 +565,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
                     
                     const fileTypeText = type === 'image' ? 'imagem' : 'arquivo';
-                    setMessage(prev => prev + (prev ? '\n' : '') + `[${fileTypeText}: ${file.name}]`);
+                    setMessage(prev => prev + (prev ? '
+' : '') + `[${fileTypeText}: ${file.name}]`);
                 };
                 reader.readAsDataURL(file);
             }
@@ -542,7 +580,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     const handleAudioRecorded = (audioUrl: string, base64: string) => {
         const content = base64.split(',')[1];
         setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content, base64 }]);
-        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
+        setMessage(prev => prev + (prev ? '
+' : '') + '🎵 [Áudio gravado]');
     };
 
     const handleEmojiSelect = (emoji: string) => {
