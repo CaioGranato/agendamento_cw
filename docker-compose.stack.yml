@@ -2,10 +2,7 @@ version: "3.8"
 
 services:
   api:
-    image: agendamento-cw-api:latest
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    image: seu-usuario-dockerhub/agendamento-cw-api:latest # <- IMAGEM DO DOCKER HUB
     networks:
       - odmaxnet
     env_file:
@@ -26,14 +23,11 @@ services:
         - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
 
   frontend:
-    image: agendamento-cw-frontend:latest
-    build:
-      context: ./chatwoot-message-scheduler
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_BASE_URL=https://${API_DOMAIN}/api
+    image: seu-usuario-dockerhub/agendamento-cw-frontend:latest # <- IMAGEM DO DOCKER HUB
     networks:
       - odmaxnet
+    env_file:
+      - .env
     deploy:
       mode: replicated
       replicas: 1
