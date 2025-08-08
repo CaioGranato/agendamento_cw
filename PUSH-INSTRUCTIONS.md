@@ -1,5 +1,7 @@
 # 🚀 PUSH DOCKER IMAGES - INSTRUÇÕES
 
+## 🤖 GITHUB ACTIONS BUILD TRIGGERING...
+
 ## ⚡ EXECUÇÃO RÁPIDA
 
 **Abra um terminal e execute:**
