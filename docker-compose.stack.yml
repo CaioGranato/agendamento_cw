@@ -7,6 +7,8 @@ services:
       - odmaxnet
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:SUA_SENHA_AQUI@postgres:5432/postgres
     deploy:
       mode: replicated
       replicas: 1
@@ -47,3 +49,7 @@ networks:
   odmaxnet:
     external: true
     name: odmaxnet
+
+secrets:
+  postgres_password:
+    external: true
