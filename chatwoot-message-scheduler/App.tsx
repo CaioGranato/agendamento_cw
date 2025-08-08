@@ -480,71 +480,82 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     >
                         <EmojiIcon />
                     </button>
-                    {showEmojiPicker && (
-                        <>
-                            {/* Overlay para fechar clicando fora */}
-                            <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setShowEmojiPicker(false)}
-                            />
-                            {/* Emoji picker expandido e responsivo */}
-                            <div className="absolute bottom-12 right-0 bg-white dark:bg-slate-600 border rounded-lg shadow-xl z-50 w-80 max-w-[95vw] sm:w-80">
-                                {/* Header com categorias */}
-                                <div className="border-b border-gray-200 dark:border-gray-600 p-2">
-                                    <div className="flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                                        {categoryKeys.map(key => (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() => setActiveCategory(key)}
-                                                className={`px-2 py-1 rounded text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
-                                                    activeCategory === key 
-                                                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 shadow-sm' 
-                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                }`}
-                                                title={emojiCategories[key].name}
-                                            >
-                                                {emojiCategories[key].name.split(' ')[0]}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                
-                                {/* Grid de emojis responsivo */}
-                                <div className="p-3 max-h-64 overflow-y-auto">
-                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1">
-                                        {emojiCategories[activeCategory].emojis.map(emoji => (
-                                            <button
-                                                key={emoji}
-                                                type="button"
-                                                onClick={() => {
-                                                    onEmojiSelect(emoji);
-                                                    setShowEmojiPicker(false);
-                                                }}
-                                                className="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-base sm:text-lg transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 active:scale-95"
-                                                title={emoji}
-                                            >
-                                                {emoji}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                
-                                {/* Footer com contador */}
-                                <div className="border-t border-gray-200 dark:border-gray-600 p-2 text-center">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            {emojiCategories[activeCategory].name}
-                                        </span>
-                                        <span className="text-xs text-gray-400 dark:text-gray-500">
-                                            {emojiCategories[activeCategory].emojis.length} emojis
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </div>
+            </div>
+            
+            {/* Emoji Picker Modal - Full Screen on Mobile */}
+            {showEmojiPicker && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+                    {/* Overlay */}
+                    <div 
+                        className="absolute inset-0 bg-black bg-opacity-50" 
+                        onClick={() => setShowEmojiPicker(false)}
+                    />
+                    
+                    {/* Modal Content */}
+                    <div className="relative w-full max-w-lg bg-white dark:bg-slate-700 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[80vh] sm:max-h-[70vh] flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Escolher Emoji</h3>
+                            <button
+                                onClick={() => setShowEmojiPicker(false)}
+                                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        {/* Categories */}
+                        <div className="border-b border-gray-200 dark:border-gray-600 px-4 py-2">
+                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                                {categoryKeys.map(key => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setActiveCategory(key)}
+                                        className={`px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all flex-shrink-0 ${
+                                            activeCategory === key 
+                                                ? 'bg-blue-500 text-white shadow-md' 
+                                                : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                                        }`}
+                                    >
+                                        {emojiCategories[key].name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Emoji Grid */}
+                        <div className="flex-1 p-4 overflow-y-auto">
+                            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                                {emojiCategories[activeCategory].emojis.map((emoji, index) => (
+                                    <button
+                                        key={`${emoji}-${index}`}
+                                        type="button"
+                                        onClick={() => {
+                                            onEmojiSelect(emoji);
+                                            setShowEmojiPicker(false);
+                                        }}
+                                        className="aspect-square p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg text-2xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Footer */}
+                        <div className="border-t border-gray-200 dark:border-gray-600 px-4 py-3 text-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {emojiCategories[activeCategory].emojis.length} emojis na categoria "{emojiCategories[activeCategory].name}"
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
             </div>
         </div>
     );
