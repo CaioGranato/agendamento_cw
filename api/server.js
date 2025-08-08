@@ -41,6 +41,7 @@ app.use('*', (req, res) => {
 });
 
 // Initialize database and start server
+let server;
 const startServer = async () => {
   try {
     // Create table if not exists
@@ -48,7 +49,7 @@ const startServer = async () => {
     console.log('Database initialized successfully');
     
     // Start server
-    app.listen(PORT, '0.0.0.0', () => {
+    server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`📅 API endpoint: http://localhost:${PORT}/api/schedules`);
@@ -63,18 +64,26 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 });
 
 startServer();

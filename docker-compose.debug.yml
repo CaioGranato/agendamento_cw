@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  # Test API Build
+  test-api:
+    image: test-agendamento-api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+      - N8N_WEBHOOK_URL=https://test.com/webhook
+      - GEMINI_API_KEY=test
+      - CORS_ORIGIN=*
+    ports:
+      - "3001:3000"
+    command: node server.js
+
+  # Test Frontend Build  
+  test-frontend:
+    image: test-agendamento-frontend:latest
+    build:
+      context: ./chatwoot-message-scheduler
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:3001/api
+    ports:
+      - "8080:80"
+    depends_on:
+      - test-api
