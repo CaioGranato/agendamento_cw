@@ -353,8 +353,7 @@ const TextFormatting = ({ textareaRef, onTextChange }: {
         const beforeText = textarea.value.substring(0, start);
         const afterText = textarea.value.substring(end);
 
-        const listItem = '
-• ';
+        const listItem = '\n• ';
         const newText = beforeText + listItem + afterText;
         onTextChange(newText);
 
@@ -438,54 +437,59 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
 
                 const pickerHeight = 450;
                 const pickerWidth = 350;
-                const padding = 8; // Margem de segurança das bordas
+                const padding = 8;
 
-                // Definir limites específicos para o ChatWoot
-                // A área verde visível no iframe tem dimensões limitadas
-                let viewportWidth = window.innerWidth;
-                let viewportHeight = window.innerHeight;
-                
-                // Para o ChatWoot, vamos usar um limite mais conservador
-                // baseado na área visível mostrada na imagem
-                const chatwootMaxWidth = Math.min(window.innerWidth, 800); // Limite conservador
-                const chatwootMaxHeight = Math.min(window.innerHeight, 600); // Limite conservador
-                
-                viewportWidth = chatwootMaxWidth;
-                viewportHeight = chatwootMaxHeight;
+                // Calcular limites reais da área visível do ChatWoot iframe
+                // Usar as dimensões da janela atual como limite máximo
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
 
                 const style: React.CSSProperties = {
                     position: 'fixed',
-                    zIndex: 9999, // Z-index muito alto para garantir que apareça sobre tudo
+                    zIndex: 9999,
                     visibility: 'visible',
                 };
 
-                // Posicionamento vertical - prioriza abrir para cima se tiver espaço
-                const spaceAbove = buttonRect.top;
+                // Posicionamento vertical - priorizar abrir para baixo, depois para cima
                 const spaceBelow = viewportHeight - buttonRect.bottom;
+                const spaceAbove = buttonRect.top;
                 
-                if (spaceAbove >= pickerHeight + padding) {
+                if (spaceBelow >= pickerHeight + padding) {
+                    // Abrir para baixo (preferencial)
+                    style.top = `${buttonRect.bottom + padding}px`;
+                } else if (spaceAbove >= pickerHeight + padding) {
                     // Abrir para cima
                     style.bottom = `${viewportHeight - buttonRect.top + padding}px`;
-                } else if (spaceBelow >= pickerHeight + padding) {
-                    // Abrir para baixo
-                    style.top = `${buttonRect.bottom + padding}px`;
                 } else {
-                    // Posicionar no centro vertical se não couber nem acima nem abaixo
-                    const centerY = (viewportHeight - pickerHeight) / 2;
-                    style.top = `${Math.max(padding, centerY)}px`;
+                    // Se não couber nem acima nem abaixo, posicionar no centro
+                    const centerY = Math.max(padding, (viewportHeight - pickerHeight) / 2);
+                    style.top = `${centerY}px`;
                 }
 
-                // FORÇAR posicionamento horizontal para SEMPRE abrir à direita
+                // FORÇAR posicionamento horizontal - PRIORIZAR SEMPRE À DIREITA
+                // Esta é a correção para o problema do emoji picker ultrapassar os limites do iframe
                 const spaceRight = viewportWidth - buttonRect.right;
                 
                 if (spaceRight >= pickerWidth + padding) {
-                    // Abrir para a direita do botão (posição preferencial)
+                    // Cenário ideal: há espaço suficiente à direita
                     style.left = `${buttonRect.right + padding}px`;
                 } else {
-                    // Se não couber à direita, posicionar alinhado à direita do botão
-                    // mas ajustado para caber na tela
+                    // Espaço insuficiente à direita - tentar alternativas
                     const maxLeft = viewportWidth - pickerWidth - padding;
-                    style.left = `${Math.max(padding, Math.min(buttonRect.right + padding, maxLeft))}px`;
+                    const spaceLeft = buttonRect.left;
+                    
+                    // Prioridade 1: Ainda tentar à direita, mesmo que com menos padding
+                    if (spaceRight >= pickerWidth) {
+                        style.left = `${buttonRect.right + 2}px`; // Padding mínimo
+                    } 
+                    // Prioridade 2: À esquerda se houver espaço adequado
+                    else if (spaceLeft >= pickerWidth + padding) {
+                        style.left = `${buttonRect.left - pickerWidth - padding}px`;
+                    }
+                    // Prioridade 3: Alinhado à borda direita da tela (sempre visível)
+                    else {
+                        style.left = `${Math.max(2, maxLeft)}px`; // Mínimo 2px da borda
+                    }
                 }
 
                 setPickerStyle(style);
@@ -512,25 +516,37 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
             if (!showEmojiPicker) return;
             
             const target = event.target as Node;
+            if (!target) return;
+
             const button = emojiButtonRef.current;
-            const pickerElement = document.querySelector('.EmojiPickerReact');
             
             // Verificar se o clique foi no botão do emoji
             if (button && button.contains(target)) {
                 return;
             }
             
-            // Verificar se o clique foi no picker
+            // Verificar se o clique foi no container do picker
+            const pickerContainer = document.querySelector('[data-emoji-picker="true"]');
+            if (pickerContainer && pickerContainer.contains(target)) {
+                return;
+            }
+            
+            // Verificar se o clique foi no picker principal
+            const pickerElement = document.querySelector('.EmojiPickerReact');
             if (pickerElement && pickerElement.contains(target)) {
                 return;
             }
             
-            // Verificar se o clique foi em elementos filhos do picker (para compatibilidade)
-            const allPickerElements = document.querySelectorAll('[data-emoji-picker="true"], .epr-*, .EmojiPickerReact *');
-            for (let i = 0; i < allPickerElements.length; i++) {
-                if (allPickerElements[i].contains(target)) {
-                    return;
+            // Verificar elementos relacionados ao picker
+            try {
+                const allPickerElements = document.querySelectorAll('.epr-emoji-category, .epr-emoji, .epr-search, .epr-category-nav, .epr-header, .epr-body, .emoji-picker-container');
+                for (let i = 0; i < allPickerElements.length; i++) {
+                    if (allPickerElements[i].contains(target)) {
+                        return;
+                    }
                 }
+            } catch (error) {
+                console.warn('Erro ao verificar elementos do picker:', error);
             }
             
             // Se chegou até aqui, clicou fora - fechar o picker
@@ -540,12 +556,13 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
         const handleEscapeKey = (event: KeyboardEvent) => {
             if (showEmojiPicker && event.key === 'Escape') {
                 setShowEmojiPicker(false);
+                event.preventDefault();
             }
         };
 
         const handleScroll = () => {
             if (showEmojiPicker) {
-                // Reposicionar o picker quando houver scroll
+                // Reposicionar o picker quando houver scroll usando a mesma lógica
                 const calculatePosition = () => {
                     const buttonRect = emojiButtonRef.current?.getBoundingClientRect();
                     if (!buttonRect) return;
@@ -554,15 +571,9 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     const pickerWidth = 350;
                     const padding = 8;
 
-                    let viewportWidth = window.innerWidth;
-                    let viewportHeight = window.innerHeight;
-                    
-                    // Aplicar mesmos limites do ChatWoot
-                    const chatwootMaxWidth = Math.min(window.innerWidth, 800);
-                    const chatwootMaxHeight = Math.min(window.innerHeight, 600);
-                    
-                    viewportWidth = chatwootMaxWidth;
-                    viewportHeight = chatwootMaxHeight;
+                    // Usar limites reais da área visível do ChatWoot iframe
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
 
                     const style: React.CSSProperties = {
                         position: 'fixed',
@@ -570,28 +581,45 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                         visibility: 'visible',
                     };
 
-                    const spaceAbove = buttonRect.top;
+                    // Posicionamento vertical - priorizar abrir para baixo, depois para cima
                     const spaceBelow = viewportHeight - buttonRect.bottom;
+                    const spaceAbove = buttonRect.top;
                     
-                    if (spaceAbove >= pickerHeight + padding) {
-                        style.bottom = `${viewportHeight - buttonRect.top + padding}px`;
-                    } else if (spaceBelow >= pickerHeight + padding) {
+                    if (spaceBelow >= pickerHeight + padding) {
+                        // Abrir para baixo (preferencial)
                         style.top = `${buttonRect.bottom + padding}px`;
+                    } else if (spaceAbove >= pickerHeight + padding) {
+                        // Abrir para cima
+                        style.bottom = `${viewportHeight - buttonRect.top + padding}px`;
                     } else {
-                        const centerY = (viewportHeight - pickerHeight) / 2;
-                        style.top = `${Math.max(padding, centerY)}px`;
+                        // Se não couber nem acima nem abaixo, posicionar no centro
+                        const centerY = Math.max(padding, (viewportHeight - pickerHeight) / 2);
+                        style.top = `${centerY}px`;
                     }
 
-                    // FORÇAR posicionamento horizontal para SEMPRE abrir à direita (scroll handler)
+                    // FORÇAR posicionamento horizontal - PRIORIZAR SEMPRE À DIREITA (scroll handler)
                     const spaceRight = viewportWidth - buttonRect.right;
                     
                     if (spaceRight >= pickerWidth + padding) {
-                        // Abrir para a direita do botão
+                        // Cenário ideal: há espaço suficiente à direita
                         style.left = `${buttonRect.right + padding}px`;
                     } else {
-                        // Ajustar para caber na tela mantendo alinhamento à direita
+                        // Espaço insuficiente à direita - tentar alternativas
                         const maxLeft = viewportWidth - pickerWidth - padding;
-                        style.left = `${Math.max(padding, Math.min(buttonRect.right + padding, maxLeft))}px`;
+                        const spaceLeft = buttonRect.left;
+                        
+                        // Prioridade 1: Ainda tentar à direita, mesmo que com menos padding
+                        if (spaceRight >= pickerWidth) {
+                            style.left = `${buttonRect.right + 2}px`; // Padding mínimo
+                        } 
+                        // Prioridade 2: À esquerda se houver espaço adequado
+                        else if (spaceLeft >= pickerWidth + padding) {
+                            style.left = `${buttonRect.left - pickerWidth - padding}px`;
+                        }
+                        // Prioridade 3: Alinhado à borda direita da tela (sempre visível)
+                        else {
+                            style.left = `${Math.max(2, maxLeft)}px`; // Mínimo 2px da borda
+                        }
                     }
 
                     setPickerStyle(style);
@@ -727,8 +755,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
                     
                     const fileTypeText = type === 'image' ? 'imagem' : 'arquivo';
-                    setMessage(prev => prev + (prev ? '
-' : '') + `[${fileTypeText}: ${file.name}]`);
+                    setMessage(prev => prev + (prev ? '\n' : '') + `[${fileTypeText}: ${file.name}]`);
                 };
                 reader.readAsDataURL(file);
             }
@@ -739,11 +766,10 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         input.click();
     };
 
-    const handleAudioRecorded = (audioUrl: string, base64: string) => {
+    const handleAudioRecorded = (_audioUrl: string, base64: string) => {
         const content = base64.split(',')[1];
         setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content, base64 }]);
-        setMessage(prev => prev + (prev ? '
-' : '') + '🎵 [Áudio gravado]');
+        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
     };
 
     const handleEmojiSelect = (emoji: string) => {
