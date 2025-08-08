@@ -133,15 +133,9 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [isInIframe, setIsInIframe] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Detectar se está em iframe
-    useEffect(() => {
-        setIsInIframe(window.parent !== window);
-    }, []);
 
     useEffect(() => {
         return () => {
@@ -153,23 +147,8 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
     }, []);
 
     const startRecording = async () => {
-        // Se estiver em iframe, ir direto para file selection
-        if (window.parent !== window) {
-            console.log('Detectado iframe - usando seleção de arquivo');
-            handleFileAudioSelection();
-            return;
-        }
-
-        // Se não estiver em iframe, tentar gravação normal
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                } 
-            });
-            
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
@@ -197,43 +176,32 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
         } catch (error) {
             console.error('Erro ao acessar microfone:', error);
             
-            // Fallback para file selection mesmo fora do iframe
-            alert('Erro ao acessar o microfone. Usando seleção de arquivo de áudio.');
-            handleFileAudioSelection();
-        }
-    };
-
-    const handleFileAudioSelection = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'audio/*,video/*';
-        input.multiple = false;
-        input.style.display = 'none';
-        
-        input.onchange = (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-                // Verificar se é um arquivo de áudio válido
-                if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64 = reader.result as string;
-                        onAudioRecorded(URL.createObjectURL(file), base64);
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    alert('Por favor, selecione um arquivo de áudio válido.');
-                }
+            // Fallback para seleção de arquivo
+            const useFileSelection = confirm('Não foi possível acessar o microfone. Deseja selecionar um arquivo de áudio?');
+            
+            if (useFileSelection) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'audio/*,video/*';
+                input.style.display = 'none';
+                
+                input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file && (file.type.startsWith('audio/') || file.type.startsWith('video/'))) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result as string;
+                            onAudioRecorded(URL.createObjectURL(file), base64);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                    document.body.removeChild(input);
+                };
+                
+                document.body.appendChild(input);
+                input.click();
             }
-            document.body.removeChild(input);
-        };
-        
-        input.oncancel = () => {
-            document.body.removeChild(input);
-        };
-        
-        document.body.appendChild(input);
-        input.click();
+        }
     };
 
     const stopRecording = () => {
@@ -308,13 +276,10 @@ const AudioRecorder = ({ onAudioRecorded }: { onAudioRecorded: (audioUrl: string
                 <button
                     type="button"
                     onClick={startRecording}
-                    className="relative p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
-                    title={isInIframe ? "Selecionar arquivo de áudio" : "Gravar áudio"}
+                    className="p-2 text-gray-500 hover:text-gray-600 transition-colors rounded hover:bg-gray-100"
+                    title="Gravar áudio"
                 >
                     <MicIcon />
-                    {isInIframe && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Modo seleção de arquivo"></span>
-                    )}
                 </button>
             )}
         </div>
@@ -451,7 +416,6 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onEmojiSelect: (emoji: string) => void;
 }) => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-    const [emojiButtonRef, setEmojiButtonRef] = useState<HTMLButtonElement | null>(null);
     const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
 
     return (
@@ -476,7 +440,6 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                 </button>
                 <div className="relative">
                     <button
-                        ref={setEmojiButtonRef}
                         type="button"
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                         className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
@@ -484,43 +447,32 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     >
                         <EmojiIcon />
                     </button>
+                    {showEmojiPicker && (
+                        <>
+                            {/* Overlay para fechar clicando fora */}
+                            <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setShowEmojiPicker(false)}
+                            />
+                            {/* Emoji picker */}
+                            <div className="absolute bottom-12 right-0 bg-white dark:bg-slate-600 border rounded-lg shadow-xl p-3 z-50 grid grid-cols-5 gap-2 min-w-60">
+                                {commonEmojis.map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() => {
+                                            onEmojiSelect(emoji);
+                                            setShowEmojiPicker(false);
+                                        }}
+                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
-            </div>
-            
-            {/* Emoji Picker - Fixed Position Portal */}
-            {showEmojiPicker && emojiButtonRef && (
-                <div 
-                    className="fixed bg-white dark:bg-slate-600 border rounded-lg shadow-lg p-3 grid grid-cols-5 gap-2 z-50"
-                    style={{
-                        bottom: `${window.innerHeight - emojiButtonRef.getBoundingClientRect().top + 10}px`,
-                        left: `${emojiButtonRef.getBoundingClientRect().left - 100}px`,
-                        minWidth: '250px'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {commonEmojis.map(emoji => (
-                        <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => {
-                                onEmojiSelect(emoji);
-                                setShowEmojiPicker(false);
-                            }}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
-                        >
-                            {emoji}
-                        </button>
-                    ))}
-                </div>
-            )}
-            
-            {/* Click outside to close */}
-            {showEmojiPicker && (
-                <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowEmojiPicker(false)}
-                />
-            )}
             </div>
         </div>
     );
