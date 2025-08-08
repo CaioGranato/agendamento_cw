@@ -432,47 +432,205 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
 
     useEffect(() => {
         if (showEmojiPicker && emojiButtonRef.current) {
-            const buttonRect = emojiButtonRef.current.getBoundingClientRect();
-            const pickerHeight = 450; // Approximate height
-            const pickerWidth = 350;  // Approximate width
+            const calculatePosition = () => {
+                const buttonRect = emojiButtonRef.current?.getBoundingClientRect();
+                if (!buttonRect) return;
 
-            const style: React.CSSProperties = {
-                position: 'fixed',
-                zIndex: 50,
-                visibility: 'visible',
+                const pickerHeight = 450;
+                const pickerWidth = 350;
+                const padding = 8; // Margem de segurança das bordas
+
+                // Definir limites específicos para o ChatWoot
+                // A área verde visível no iframe tem dimensões limitadas
+                let viewportWidth = window.innerWidth;
+                let viewportHeight = window.innerHeight;
+                
+                // Para o ChatWoot, vamos usar um limite mais conservador
+                // baseado na área visível mostrada na imagem
+                const chatwootMaxWidth = Math.min(window.innerWidth, 800); // Limite conservador
+                const chatwootMaxHeight = Math.min(window.innerHeight, 600); // Limite conservador
+                
+                viewportWidth = chatwootMaxWidth;
+                viewportHeight = chatwootMaxHeight;
+
+                const style: React.CSSProperties = {
+                    position: 'fixed',
+                    zIndex: 9999, // Z-index muito alto para garantir que apareça sobre tudo
+                    visibility: 'visible',
+                };
+
+                // Posicionamento vertical - prioriza abrir para cima se tiver espaço
+                const spaceAbove = buttonRect.top;
+                const spaceBelow = viewportHeight - buttonRect.bottom;
+                
+                if (spaceAbove >= pickerHeight + padding) {
+                    // Abrir para cima
+                    style.bottom = `${viewportHeight - buttonRect.top + padding}px`;
+                } else if (spaceBelow >= pickerHeight + padding) {
+                    // Abrir para baixo
+                    style.top = `${buttonRect.bottom + padding}px`;
+                } else {
+                    // Posicionar no centro vertical se não couber nem acima nem abaixo
+                    const centerY = (viewportHeight - pickerHeight) / 2;
+                    style.top = `${Math.max(padding, centerY)}px`;
+                }
+
+                // FORÇAR posicionamento horizontal para SEMPRE abrir à direita
+                const spaceRight = viewportWidth - buttonRect.right;
+                
+                if (spaceRight >= pickerWidth + padding) {
+                    // Abrir para a direita do botão (posição preferencial)
+                    style.left = `${buttonRect.right + padding}px`;
+                } else {
+                    // Se não couber à direita, posicionar alinhado à direita do botão
+                    // mas ajustado para caber na tela
+                    const maxLeft = viewportWidth - pickerWidth - padding;
+                    style.left = `${Math.max(padding, Math.min(buttonRect.right + padding, maxLeft))}px`;
+                }
+
+                setPickerStyle(style);
             };
 
-            // Vertical positioning
-            if (buttonRect.top > pickerHeight) {
-                style.bottom = `${window.innerHeight - buttonRect.top}px`;
-            } else {
-                style.top = `${buttonRect.bottom}px`;
-            }
+            calculatePosition();
 
-            // Horizontal positioning
-            if (buttonRect.left + pickerWidth > window.innerWidth) {
-                style.right = `${window.innerWidth - buttonRect.right}px`;
-            } else {
-                style.left = `${buttonRect.left}px`;
-            }
+            // Recalcular posição se a janela for redimensionada
+            const handleResize = () => {
+                if (showEmojiPicker) {
+                    calculatePosition();
+                }
+            };
 
-            setPickerStyle(style);
+            window.addEventListener('resize', handleResize);
+            return () => window.removeEventListener('resize', handleResize);
         } else {
             setPickerStyle({ visibility: 'hidden', position: 'fixed' });
         }
     }, [showEmojiPicker]);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+            if (!showEmojiPicker) return;
+            
+            const target = event.target as Node;
+            const button = emojiButtonRef.current;
             const pickerElement = document.querySelector('.EmojiPickerReact');
-            if (showEmojiPicker && emojiButtonRef.current && !emojiButtonRef.current.contains(event.target as Node) && pickerElement && !pickerElement.contains(event.target as Node)) {
+            
+            // Verificar se o clique foi no botão do emoji
+            if (button && button.contains(target)) {
+                return;
+            }
+            
+            // Verificar se o clique foi no picker
+            if (pickerElement && pickerElement.contains(target)) {
+                return;
+            }
+            
+            // Verificar se o clique foi em elementos filhos do picker (para compatibilidade)
+            const allPickerElements = document.querySelectorAll('[data-emoji-picker="true"], .epr-*, .EmojiPickerReact *');
+            for (let i = 0; i < allPickerElements.length; i++) {
+                if (allPickerElements[i].contains(target)) {
+                    return;
+                }
+            }
+            
+            // Se chegou até aqui, clicou fora - fechar o picker
+            setShowEmojiPicker(false);
+        };
+
+        const handleEscapeKey = (event: KeyboardEvent) => {
+            if (showEmojiPicker && event.key === 'Escape') {
                 setShowEmojiPicker(false);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        const handleScroll = () => {
+            if (showEmojiPicker) {
+                // Reposicionar o picker quando houver scroll
+                const calculatePosition = () => {
+                    const buttonRect = emojiButtonRef.current?.getBoundingClientRect();
+                    if (!buttonRect) return;
+
+                    const pickerHeight = 450;
+                    const pickerWidth = 350;
+                    const padding = 8;
+
+                    let viewportWidth = window.innerWidth;
+                    let viewportHeight = window.innerHeight;
+                    
+                    // Aplicar mesmos limites do ChatWoot
+                    const chatwootMaxWidth = Math.min(window.innerWidth, 800);
+                    const chatwootMaxHeight = Math.min(window.innerHeight, 600);
+                    
+                    viewportWidth = chatwootMaxWidth;
+                    viewportHeight = chatwootMaxHeight;
+
+                    const style: React.CSSProperties = {
+                        position: 'fixed',
+                        zIndex: 9999,
+                        visibility: 'visible',
+                    };
+
+                    const spaceAbove = buttonRect.top;
+                    const spaceBelow = viewportHeight - buttonRect.bottom;
+                    
+                    if (spaceAbove >= pickerHeight + padding) {
+                        style.bottom = `${viewportHeight - buttonRect.top + padding}px`;
+                    } else if (spaceBelow >= pickerHeight + padding) {
+                        style.top = `${buttonRect.bottom + padding}px`;
+                    } else {
+                        const centerY = (viewportHeight - pickerHeight) / 2;
+                        style.top = `${Math.max(padding, centerY)}px`;
+                    }
+
+                    // FORÇAR posicionamento horizontal para SEMPRE abrir à direita (scroll handler)
+                    const spaceRight = viewportWidth - buttonRect.right;
+                    
+                    if (spaceRight >= pickerWidth + padding) {
+                        // Abrir para a direita do botão
+                        style.left = `${buttonRect.right + padding}px`;
+                    } else {
+                        // Ajustar para caber na tela mantendo alinhamento à direita
+                        const maxLeft = viewportWidth - pickerWidth - padding;
+                        style.left = `${Math.max(padding, Math.min(buttonRect.right + padding, maxLeft))}px`;
+                    }
+
+                    setPickerStyle(style);
+                };
+
+                requestAnimationFrame(calculatePosition);
+            }
+        };
+
+        if (showEmojiPicker) {
+            // Usar capture para pegar eventos antes que outros handlers os processem
+            document.addEventListener('mousedown', handleClickOutside, { capture: true });
+            document.addEventListener('touchstart', handleClickOutside, { capture: true });
+            document.addEventListener('keydown', handleEscapeKey);
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            
+            // Também escutar por scroll no iframe pai se existir
+            if (window.parent !== window) {
+                try {
+                    window.parent.addEventListener('scroll', handleScroll, { passive: true });
+                } catch (e) {
+                    // Ignorar erros de cross-origin
+                }
+            }
+        }
+
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('mousedown', handleClickOutside, { capture: true });
+            document.removeEventListener('touchstart', handleClickOutside, { capture: true });
+            document.removeEventListener('keydown', handleEscapeKey);
+            window.removeEventListener('scroll', handleScroll);
+            
+            if (window.parent !== window) {
+                try {
+                    window.parent.removeEventListener('scroll', handleScroll);
+                } catch (e) {
+                    // Ignorar erros de cross-origin
+                }
+            }
         };
     }, [showEmojiPicker]);
 
@@ -506,7 +664,11 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                     >
                         <EmojiIcon />
                     </button>
-                    <div style={pickerStyle}>
+                    <div 
+                        style={pickerStyle}
+                        data-emoji-picker="true"
+                        className="emoji-picker-container"
+                    >
                         <EmojiPicker
                             onEmojiClick={handleEmojiClick}
                             autoFocusSearch={false}
