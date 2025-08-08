@@ -1,0 +1,101 @@
+version: "3.8"
+
+# Para usar com PostgreSQL externo já existente
+# Configure DATABASE_URL para apontar para seu PostgreSQL
+
+services:
+  # API Backend Service
+  api:
+    image: granatocaio/agendamento-cw-api:latest
+    networks:
+      - odmaxnet
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=America/Sao_Paulo
+      # IMPORTANTE: Configure esta URL para seu PostgreSQL externo
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-https://webhookn8n.odtravel.com.br/webhook/default}
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL:-https://n8n.odtravel.com.br/webhook-test/default}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 5
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`${API_DOMAIN:-apiag.odmax.com.br}`)"
+        - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-cw-api.tls=true"
+        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
+        - "traefik.http.routers.agendamento-cw-api.middlewares=api-headers"
+        - "traefik.http.middlewares.api-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend Service
+  frontend:
+    image: granatocaio/agendamento-cw-frontend:latest
+    networks:
+      - odmaxnet
+    environment:
+      - API_BASE_URL=${API_BASE_URL:-https://apiag.odmax.com.br/api}
+      - VITE_N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-cw-frontend.rule=Host(`${FRONTEND_DOMAIN:-agcw.odmax.com.br}`)"
+        - "traefik.http.routers.agendamento-cw-frontend.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-cw-frontend.tls=true"
+        - "traefik.http.routers.agendamento-cw-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-cw-frontend.loadbalancer.server.port=80"
+        - "traefik.http.routers.agendamento-cw-frontend.middlewares=frontend-headers"
+        - "traefik.http.middlewares.frontend-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  odmaxnet:
+    external: true
+    name: odmaxnet
