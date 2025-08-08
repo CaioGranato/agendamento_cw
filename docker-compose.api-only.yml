@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+  # API Backend Service Only - With Sensitive Data
+  agendamento-cw-api:
+    image: node:18-alpine
+    working_dir: /app
+    command: |
+      sh -c "
+        echo 'Setting up API service...' &&
+        apk add --no-cache git curl &&
+        git clone --depth 1 https://github.com/CaioGranato/agendamento_cw.git /tmp/repo &&
+        cp -r /tmp/repo/api/* /app/ &&
+        echo 'Installing dependencies...' &&
+        npm install --production --silent &&
+        echo 'API service starting...' &&
+        exec node server.js
+      "
+    
+    networks:
+      - odmaxnet
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=America/Sao_Paulo
+      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
+      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
+      - N8N_ALERT_WEBHOOK_URL=https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
+      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - CORS_ORIGIN=*
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com.br`)"
+        - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-cw-api.tls=true"
+        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
+        - "traefik.http.routers.agendamento-cw-api.middlewares=api-headers"
+        - "traefik.http.middlewares.api-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+
+networks:
+  odmaxnet:
+    external: true
+    name: odmaxnet

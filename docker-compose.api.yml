@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  agendamento-cw-api:
+    image: agendamento-cw-api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    
+    networks:
+      - odmaxnet
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=America/Sao_Paulo
+      # Use Docker secrets ou um arquivo .env no servidor para dados sensíveis
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`${API_HOSTNAME}`)"
+        - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-cw-api.loadbalancer.server.port=3000"
+
+networks:
+  odmaxnet:
+    external: true
+    name: odmaxnet
