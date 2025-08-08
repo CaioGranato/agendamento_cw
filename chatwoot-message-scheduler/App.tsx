@@ -416,7 +416,40 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     onEmojiSelect: (emoji: string) => void;
 }) => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-    const commonEmojis = ['😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '💯'];
+    const [activeCategory, setActiveCategory] = useState('faces');
+    
+    const emojiCategories = {
+        faces: {
+            name: '😊 Rostos',
+            emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '🥲', '🥹', '☺️', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😮‍💨', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓']
+        },
+        gestures: {
+            name: '👍 Gestos',
+            emojis: ['👍', '👎', '👌', '🤌', '🤏', '✌️', '🤞', '🫰', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '🫵', '👋', '🤚', '🖐️', '✋', '🖖', '🫱', '🫲', '🫳', '🫴', '👏', '🙌', '🫶', '👐', '🤲', '🤝', '🙏']
+        },
+        hearts: {
+            name: '❤️ Corações',
+            emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💖', '💝', '💗', '💓', '💞', '💕', '💘', '💌', '💟', '♥️', '💔', '❤️‍🔥', '❤️‍🩹', '💋', '🫶']
+        },
+        objects: {
+            name: '⭐ Objetos',
+            emojis: ['🔥', '💯', '💢', '💨', '💫', '⭐', '🌟', '✨', '⚡', '☄️', '💥', '🔸', '🔹', '🔶', '🔷', '💠', '🌀', '🕳️', '💤', '🎉', '🎊', '🎁', '🏆', '🥇', '🥈', '🥉', '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉']
+        },
+        travel: {
+            name: '🚗 Viagem',
+            emojis: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '🛼', '🚁', '🛸', '✈️', '🛩️', '🛫', '🛬', '🪂', '💺', '🚀', '🛰️', '🚢', '⛵', '🛶', '🏖️', '🏝️', '🗺️']
+        },
+        food: {
+            name: '🍕 Comida',
+            emojis: ['🍎', '🍏', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕']
+        },
+        nature: {
+            name: '🌺 Natureza',
+            emojis: ['🌱', '🌿', '☘️', '🍀', '🎍', '🪴', '🎋', '🍃', '🍂', '🍁', '🪸', '🪷', '🌾', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙', '🌎', '🌍', '🌏', '🪐', '💫', '⭐', '🌟', '✨', '⚡', '☄️', '💥', '🔥', '🌪️', '🌈', '☀️', '🌤️', '⛅', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌬️', '💨', '💧', '💦', '🫧', '☔', '☂️', '🌊', '🌫️']
+        }
+    };
+
+    const categoryKeys = Object.keys(emojiCategories) as Array<keyof typeof emojiCategories>;
 
     return (
         <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
@@ -454,21 +487,60 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                                 className="fixed inset-0 z-40" 
                                 onClick={() => setShowEmojiPicker(false)}
                             />
-                            {/* Emoji picker */}
-                            <div className="absolute bottom-12 right-0 bg-white dark:bg-slate-600 border rounded-lg shadow-xl p-3 z-50 grid grid-cols-5 gap-2 min-w-60">
-                                {commonEmojis.map(emoji => (
-                                    <button
-                                        key={emoji}
-                                        type="button"
-                                        onClick={() => {
-                                            onEmojiSelect(emoji);
-                                            setShowEmojiPicker(false);
-                                        }}
-                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-lg transition-colors w-10 h-10 flex items-center justify-center"
-                                    >
-                                        {emoji}
-                                    </button>
-                                ))}
+                            {/* Emoji picker expandido e responsivo */}
+                            <div className="absolute bottom-12 right-0 bg-white dark:bg-slate-600 border rounded-lg shadow-xl z-50 w-80 max-w-[95vw] sm:w-80">
+                                {/* Header com categorias */}
+                                <div className="border-b border-gray-200 dark:border-gray-600 p-2">
+                                    <div className="flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                                        {categoryKeys.map(key => (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => setActiveCategory(key)}
+                                                className={`px-2 py-1 rounded text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
+                                                    activeCategory === key 
+                                                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 shadow-sm' 
+                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                }`}
+                                                title={emojiCategories[key].name}
+                                            >
+                                                {emojiCategories[key].name.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Grid de emojis responsivo */}
+                                <div className="p-3 max-h-64 overflow-y-auto">
+                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1">
+                                        {emojiCategories[activeCategory].emojis.map(emoji => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => {
+                                                    onEmojiSelect(emoji);
+                                                    setShowEmojiPicker(false);
+                                                }}
+                                                className="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-500 rounded text-base sm:text-lg transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 active:scale-95"
+                                                title={emoji}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Footer com contador */}
+                                <div className="border-t border-gray-200 dark:border-gray-600 p-2 text-center">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            {emojiCategories[activeCategory].name}
+                                        </span>
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                                            {emojiCategories[activeCategory].emojis.length} emojis
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </>
                     )}
