@@ -4,7 +4,7 @@
 !.env.example
 
 # Docker compose with credentials
-docker-compose.production.yml
+# docker-compose.production.yml  # Descomentado pois está sendo usado
 
 # Local development files
 *.local.yml
