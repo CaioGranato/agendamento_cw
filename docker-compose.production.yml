@@ -55,7 +55,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=odmaxnet"
-        - "traefik.http.routers.agendamento-cw-api.rule=Host(`apiag.odmax.com.br`)"
+        - "traefik.http.routers.agendamento-cw-api.rule=Host(`${API_DOMAIN}`)"
         - "traefik.http.routers.agendamento-cw-api.entrypoints=websecure"
         - "traefik.http.routers.agendamento-cw-api.tls=true"
         - "traefik.http.routers.agendamento-cw-api.tls.certresolver=letsencryptresolver"
@@ -71,14 +71,14 @@ services:
       dockerfile: Dockerfile
       args:
         # Este valor será usado no momento do build
-        - VITE_API_BASE_URL=https://apiag.odmax.com.br/api
+        - VITE_API_BASE_URL=${API_BASE_URL}
 
     networks:
       - odmaxnet
 
     environment:
-      - VITE_API_BASE_URL=https://apiag.odmax.com.br/api
-      - VITE_N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL:-https://n8n.odtravel.com.br/webhook-test/default}
+      - VITE_API_BASE_URL=${API_BASE_URL}
+      - VITE_N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"] # Nginx agora serve /health
@@ -113,7 +113,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=odmaxnet"
-        - "traefik.http.routers.agendamento-cw-frontend.rule=Host(`agendamento.odmax.com.br`)"
+        - "traefik.http.routers.agendamento-cw-frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
         - "traefik.http.routers.agendamento-cw-frontend.entrypoints=websecure"
         - "traefik.http.routers.agendamento-cw-frontend.tls=true"
         - "traefik.http.routers.agendamento-cw-frontend.tls.certresolver=letsencryptresolver"
