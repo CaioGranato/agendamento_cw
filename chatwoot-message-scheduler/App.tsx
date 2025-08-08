@@ -519,7 +519,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                             />
                             
                             {/* Emoji Picker positioned to the right */}
-                            <div className="absolute bottom-12 left-0 w-80 h-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 flex">
+                            <div className="absolute bottom-12 right-0 w-80 h-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 flex">
                                 {/* Category Sidebar */}
                                 <div className="w-12 bg-gray-50 dark:bg-gray-700 rounded-l-lg flex flex-col items-center py-2 space-y-1">
                                     {categoryKeys.map(key => (
