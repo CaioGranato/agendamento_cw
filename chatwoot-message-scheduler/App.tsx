@@ -480,7 +480,7 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
         : emojiCategories[activeCategory].emojis;
 
     return (
-        <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
+        <div className="relative flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 rounded-b">
             <div className="flex items-center space-x-3">
                 <AudioRecorder onAudioRecorded={onAudioRecorded} />
                 <button
@@ -499,27 +499,27 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                 >
                     <AttachIcon />
                 </button>
-                <div className="relative">
-                    <button
-                        type="button"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
-                        title="Emoji"
-                    >
-                        <EmojiIcon />
-                    </button>
+                <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded"
+                    title="Emoji"
+                >
+                    <EmojiIcon />
+                </button>
+            </div>
+            
+            {/* Chatwoot-style Emoji Picker - positioned relative to entire MediaButtons container */}
+            {showEmojiPicker && (
+                <>
+                    {/* Overlay */}
+                    <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowEmojiPicker(false)}
+                    />
                     
-                    {/* Chatwoot-style Emoji Picker */}
-                    {showEmojiPicker && (
-                        <>
-                            {/* Overlay */}
-                            <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setShowEmojiPicker(false)}
-                            />
-                            
-                            {/* Emoji Picker positioned to the right */}
-                            <div className="absolute bottom-12 right-0 w-80 h-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 flex">
+                    {/* Emoji Picker positioned to the right of the container */}
+                    <div className="absolute bottom-12 right-0 w-80 h-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 flex">
                                 {/* Category Sidebar */}
                                 <div className="w-12 bg-gray-50 dark:bg-gray-700 rounded-l-lg flex flex-col items-center py-2 space-y-1">
                                     {categoryKeys.map(key => (
@@ -591,9 +591,6 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
                             </div>
                         </>
                     )}
-                </div>
-            </div>
-            </div>
         </div>
     );
 };
