@@ -1145,7 +1145,25 @@ export default function App() {
             }
         } catch (error) {
             console.error('Error submitting schedule:', error);
-            alert('Erro ao salvar agendamento. Verifique a conexão e tente novamente.');
+            
+            // Mensagem mais específica baseada no tipo de erro
+            let errorMessage = 'Erro ao salvar agendamento.';
+            
+            if (error instanceof Error) {
+                if (error.message.includes('API não disponível')) {
+                    errorMessage = 'Servidor temporariamente indisponível. Os dados foram salvos localmente e serão sincronizados quando a conexão for restabelecida.';
+                } else if (error.message.includes('fetch')) {
+                    errorMessage = 'Erro de conectividade. Verifique sua conexão com a internet.';
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'Serviço não encontrado. Contate o suporte técnico.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Erro interno do servidor. Tente novamente em alguns minutos.';
+                } else {
+                    errorMessage = `Erro: ${error.message}`;
+                }
+            }
+            
+            alert(errorMessage);
         }
     }, [appContext, scheduledMessages]);
 
@@ -1165,7 +1183,7 @@ export default function App() {
         if (!appContext || !window.confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
         try {
-            const success = await deleteScheduledMessage(id);
+            const success = await deleteScheduledMessage(id, appContext.contact.id);
             
             if (success) {
                 const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
@@ -1173,7 +1191,11 @@ export default function App() {
                 setScheduledMessages(activeMessages);
                 alert('Agendamento cancelado com sucesso.');
             } else {
-                alert('Erro ao cancelar agendamento. Verifique a conexão e tente novamente.');
+                // Mesmo que a API falhe, atualizar a lista local
+                const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
+                const activeMessages = updatedMessages.filter(msg => msg.status !== 'Cancelado');
+                setScheduledMessages(activeMessages);
+                alert('Agendamento removido localmente. Será sincronizado quando a conexão for restabelecida.');
             }
         } catch (error) {
             console.error('Error canceling schedule:', error);

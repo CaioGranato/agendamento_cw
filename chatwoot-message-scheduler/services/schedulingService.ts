@@ -49,8 +49,8 @@ export const updateScheduledMessage = async (
   return await apiService.updateScheduledMessage(id, scheduleData, contact, conversation);
 };
 
-export const deleteScheduledMessage = async (id: string): Promise<boolean> => {
-  return await apiService.deleteScheduledMessage(id);
+export const deleteScheduledMessage = async (id: string, contactId?: number): Promise<boolean> => {
+  return await apiService.deleteScheduledMessage(id, contactId);
 };
 
 export const getScheduledMessageById = async (id: string): Promise<ScheduledMessage | null> => {
