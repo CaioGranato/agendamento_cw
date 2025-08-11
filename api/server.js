@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { createTableIfNotExists } = require('./db/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,13 +39,12 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize database and start server
+// Initialize server
 let server;
 const startServer = async () => {
   try {
-    // Create table if not exists
-    await createTableIfNotExists();
-    console.log('Database initialized successfully');
+    console.log('Connecting to Supabase database...');
+    console.log('Database connection configured for Supabase');
     
     // Start server
     server = app.listen(PORT, '0.0.0.0', () => {
@@ -54,6 +52,7 @@ const startServer = async () => {
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`📅 API endpoint: http://localhost:${PORT}/api/schedules`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🗄️  Database: Supabase (${process.env.SUPABASE_HOST})`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

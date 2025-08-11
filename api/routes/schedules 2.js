@@ -165,32 +165,32 @@ router.put('/:schedule_id', async (req, res) => {
   }
 });
 
-// DELETE /api/schedules/:schedule_id - Cancelar agendamento
-router.delete('/:schedule_id', async (req, res) => {
+// DELETE /api/schedules/:id - Cancelar/deletar agendamento
+router.delete('/:id', async (req, res) => {
   try {
-    const { schedule_id } = req.params;
+    const { id } = req.params;
     
     // Verificar se o agendamento existe
-    const existingSchedule = await getScheduleById(schedule_id);
+    const existingSchedule = await getScheduleById(id);
     if (!existingSchedule) {
       return res.status(404).json({ error: 'Schedule not found' });
     }
 
-    // Cancelar o agendamento (status será 'cancelled')
-    const cancelledSchedule = await cancelSchedule(schedule_id);
+    // Deletar o agendamento
+    const deletedSchedule = await deleteSchedule(id);
     
-    res.json({ message: 'Schedule cancelled successfully', schedule: cancelledSchedule });
+    res.json({ message: 'Schedule deleted successfully', schedule: deletedSchedule });
   } catch (error) {
-    console.error('Error cancelling schedule:', error);
+    console.error('Error deleting schedule:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET /api/schedules/single/:schedule_id - Buscar agendamento específico por ID
-router.get('/single/:schedule_id', async (req, res) => {
+// GET /api/schedules/single/:id - Buscar agendamento específico por ID
+router.get('/single/:id', async (req, res) => {
   try {
-    const { schedule_id } = req.params;
-    const schedule = await getScheduleById(schedule_id);
+    const { id } = req.params;
+    const schedule = await getScheduleById(id);
     
     if (!schedule) {
       return res.status(404).json({ error: 'Schedule not found' });
