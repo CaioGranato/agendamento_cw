@@ -34,14 +34,8 @@ const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
 
 // Transform UI message to API format  
 const transformToApiFormat = (uiMessage: Partial<ScheduledMessage>): any => {
-  let schedule_from = uiMessage.schedule_from || uiMessage.datetime;
+  const schedule_from = uiMessage.schedule_from || uiMessage.datetime;
   console.log('🔧 FRONTEND DEBUG - Original schedule_from:', schedule_from);
-
-  if (schedule_from) {
-    // Assume que a data de entrada está no formato local de São Paulo e converte para UTC ISO string
-    schedule_from = dayjs.tz(schedule_from, 'America/Sao_Paulo').toISOString();
-    console.log('🔧 FRONTEND DEBUG - Converted to ISO:', schedule_from);
-  }
 
   const result = {
     schedule_id: uiMessage.id,

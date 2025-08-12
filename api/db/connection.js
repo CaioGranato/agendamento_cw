@@ -21,8 +21,6 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-// Supabase table already exists - no need to create
-
 const executeQuery = async (text, params) => {
   const start = Date.now();
   const client = await pool.connect();
@@ -30,10 +28,10 @@ const executeQuery = async (text, params) => {
   try {
     const result = await client.query(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: result.rowCount });
+    console.log('Executed query', { text, params, duration, rows: result.rowCount });
     return result;
   } catch (error) {
-    console.error('Database query error:', { text, error: error.message });
+    console.error('Database query error:', { text, params, error: error.message });
     throw error;
   } finally {
     client.release();
@@ -63,7 +61,7 @@ const createSchedule = async (scheduleData, chatwootData) => {
 
   const { contact, conversation, meta } = chatwootData;
   const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
-  
+
   const query = `
     INSERT INTO agendamento_msg (
       schedule_from, alert, alert_from, comment, message, attachments, status,
@@ -81,187 +79,147 @@ const createSchedule = async (scheduleData, chatwootData) => {
       meta_sender_custom_attributes_plano, meta_sender_custom_attributes_id_externo,
       meta_assignee_id, meta_assignee_name, meta_assignee_email
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-      $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
+      $1, $2, $3, $4, $5, $6, 'scheduled', $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+      $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
       $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
-      $48, $49, $50, $51, $52
+      $48, $49, $50, $51
     )
     RETURNING *
   `;
-  
-  const scheduleFromUtc = dayjs(schedule_from);
-  const alertFromUtc = alert_from ? dayjs(alert_from) : null;
-  
+
+  const scheduleFromString = schedule_from ? dayjs.tz(schedule_from, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss') : null;
+  const alertFromString = alert_from ? dayjs.tz(alert_from, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss') : null;
+
   const values = [
-    scheduleFromUtc.toDate(), // schedule_from
-    alert, // alert
-    alertFromUtc ? alertFromUtc.toDate() : null, // alert_from
-    comment || null, // comment
-    message, // message
-    JSON.stringify(attachments), // attachments
-    'scheduled', // status
-    null, // location (will be set to schedule_id by trigger)
-    contact.id, // contactid
-    contact.name || null, // name
-    contact.phone_number || null, // phone_number
-    contact.identifier || null, // identifier
-    contact.email || null, // email
-    conversation.id, // conversationid
-    conversation.inbox_id || null, // inboxid
+    scheduleFromString,
+    alert,
+    alertFromString,
+    comment || null,
+    message,
+    JSON.stringify(attachments),
+    null, // location
+    contact.id,
+    contact.name || null,
+    contact.phone_number || null,
+    contact.identifier || null,
+    contact.email || null,
+    conversation.id,
+    conversation.inbox_id || null,
     contact.id, // persons_id
     contact.id, // leads_id
-    nowSaoPaulo.toDate(), // lastupdate
-    nowSaoPaulo.toDate(), // lastupdateutc
-    nowSaoPaulo.toDate(), // timestamp
-    nowSaoPaulo.toDate(), // keep_alive_time
-    contact.id, // contact_id
-    contact.name || null, // contact_name
-    contact.email || null, // contact_email
-    contact.phone_number || null, // contact_phone_number
-    contact.identifier || null, // contact_identifier
-    contact.thumbnail || null, // contact_thumbnail
-    contact.custom_attributes?.cidade || null, // contact_custom_attributes_cidade
-    contact.custom_attributes?.plano || null, // contact_custom_attributes_plano
-    contact.custom_attributes?.id_externo || null, // contact_custom_attributes_id_externo
-    conversation.id, // conversation_id
-    conversation.status || null, // conversation_status
-    conversation.inbox_id || null, // conversation_inbox_id
-    conversation.custom_attributes?.motivo_contato || null, // conversation_custom_attributes_motivo_contato
-    conversation.custom_attributes?.prioridade || null, // conversation_custom_attributes_prioridade
-    conversation.agent?.id || null, // conversation_agent_id
-    conversation.agent?.name || null, // conversation_agent_name
-    conversation.agent?.email || null, // conversation_agent_email
-    conversation.team?.id || null, // conversation_team_id
-    conversation.team?.name || null, // conversation_team_name
-    meta?.sender?.id || null, // meta_sender_id
-    meta?.sender?.name || null, // meta_sender_name
-    meta?.sender?.email || null, // meta_sender_email
-    meta?.sender?.phone_number || null, // meta_sender_phone_number
-    meta?.sender?.identifier || null, // meta_sender_identifier
-    meta?.sender?.thumbnail || null, // meta_sender_thumbnail
-    meta?.sender?.custom_attributes?.cidade || null, // meta_sender_custom_attributes_cidade
-    meta?.sender?.custom_attributes?.plano || null, // meta_sender_custom_attributes_plano
-    meta?.sender?.custom_attributes?.id_externo || null, // meta_sender_custom_attributes_id_externo
-    meta?.assignee?.id || null, // meta_assignee_id
-    meta?.assignee?.name || null, // meta_assignee_name
-    meta?.assignee?.email || null // meta_assignee_email
+    nowSaoPaulo.format('YYYY-MM-DD HH:mm:ss'),
+    nowSaoPaulo.toISOString(),
+    nowSaoPaulo.format('YYYY-MM-DD HH:mm:ss'),
+    nowSaoPaulo.toISOString(),
+    contact.id,
+    contact.name || null,
+    contact.email || null,
+    contact.phone_number || null,
+    contact.identifier || null,
+    contact.thumbnail || null,
+    contact.custom_attributes?.cidade || null,
+    contact.custom_attributes?.plano || null,
+    contact.custom_attributes?.id_externo || null,
+    conversation.id,
+    conversation.status || null,
+    conversation.inbox_id || null,
+    conversation.custom_attributes?.motivo_contato || null,
+    conversation.custom_attributes?.prioridade || null,
+    conversation.agent?.id || null,
+    conversation.agent?.name || null,
+    conversation.agent?.email || null,
+    conversation.team?.id || null,
+    conversation.team?.name || null,
+    meta?.sender?.id || null,
+    meta?.sender?.name || null,
+    meta?.sender?.email || null,
+    meta?.sender?.phone_number || null,
+    meta?.sender?.identifier || null,
+    meta?.sender?.thumbnail || null,
+    meta?.sender?.custom_attributes?.cidade || null,
+    meta?.sender?.custom_attributes?.plano || null,
+    meta?.sender?.custom_attributes?.id_externo || null,
+    meta?.assignee?.id || null,
+    meta?.assignee?.name || null,
+    meta?.assignee?.email || null
   ];
-  
+
   const result = await executeQuery(query, values);
   return result.rows[0];
 };
 
 const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
-  console.log('🔧 UPDATE DEBUG - schedule_id:', schedule_id);
-  console.log('🔧 UPDATE DEBUG - scheduleData:', JSON.stringify(scheduleData, null, 2));
-  console.log('🔧 UPDATE DEBUG - chatwootData:', JSON.stringify(chatwootData, null, 2));
-
-  const {
-    schedule_from,
-    message,
-    attachments,
-    alert,
-    alert_from,
-    comment
-  } = scheduleData;
-
   const { contact, conversation, meta } = chatwootData;
   const nowSaoPaulo = dayjs().tz('America/Sao_Paulo');
-  
+
+  const fieldsToUpdate = {};
+  const dataMapping = {
+    schedule_from: scheduleData.schedule_from,
+    message: scheduleData.message,
+    attachments: scheduleData.attachments,
+    alert: scheduleData.alert,
+    alert_from: scheduleData.alert_from,
+    comment: scheduleData.comment,
+    contact_name: contact?.name,
+    contact_email: contact?.email,
+    contact_phone_number: contact?.phone_number,
+    contact_identifier: contact?.identifier,
+    contact_thumbnail: contact?.thumbnail,
+    contact_custom_attributes_cidade: contact?.custom_attributes?.cidade,
+    contact_custom_attributes_plano: contact?.custom_attributes?.plano,
+    contact_custom_attributes_id_externo: contact?.custom_attributes?.id_externo,
+    conversation_status: conversation?.status,
+    conversation_custom_attributes_motivo_contato: conversation?.custom_attributes?.motivo_contato,
+    conversation_custom_attributes_prioridade: conversation?.custom_attributes?.prioridade,
+    conversation_agent_id: conversation?.agent?.id,
+    conversation_agent_name: conversation?.agent?.name,
+    conversation_agent_email: conversation?.agent?.email,
+    conversation_team_id: conversation?.team?.id,
+    conversation_team_name: conversation?.team?.name,
+    meta_sender_name: meta?.sender?.name,
+    meta_sender_email: meta?.sender?.email,
+    meta_sender_phone_number: meta?.sender?.phone_number,
+    meta_sender_identifier: meta?.sender?.identifier,
+    meta_sender_thumbnail: meta?.sender?.thumbnail,
+    meta_sender_custom_attributes_cidade: meta?.sender?.custom_attributes?.cidade,
+    meta_sender_custom_attributes_plano: meta?.sender?.custom_attributes?.plano,
+    meta_sender_custom_attributes_id_externo: meta?.sender?.custom_attributes?.id_externo,
+    meta_assignee_id: meta?.assignee?.id,
+    meta_assignee_name: meta?.assignee?.name,
+    meta_assignee_email: meta?.assignee?.email,
+  };
+
+  for (const [key, value] of Object.entries(dataMapping)) {
+    if (value !== undefined && value !== null) {
+      if (key === 'schedule_from' || key === 'alert_from') {
+        fieldsToUpdate[key] = dayjs.tz(value, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+      } else if (key === 'attachments') {
+        fieldsToUpdate[key] = JSON.stringify(value);
+      } else {
+        fieldsToUpdate[key] = value;
+      }
+    }
+  }
+
+  fieldsToUpdate.status = 'edited';
+  fieldsToUpdate.lastupdate = nowSaoPaulo.format('YYYY-MM-DD HH:mm:ss');
+  fieldsToUpdate.lastupdateutc = nowSaoPaulo.toISOString();
+  fieldsToUpdate.updated_at = nowSaoPaulo.toISOString();
+  fieldsToUpdate.keep_alive_time = nowSaoPaulo.toISOString();
+
+  const setClauses = Object.keys(fieldsToUpdate).map((key, i) => `${key} = $${i + 1}`).join(', ');
+  const values = Object.values(fieldsToUpdate);
+
   const query = `
-    UPDATE agendamento_msg 
-    SET 
-      schedule_from = COALESCE($1, schedule_from),
-      message = COALESCE($2, message),
-      attachments = COALESCE($3, attachments),
-      alert = COALESCE($4, alert),
-      alert_from = COALESCE($5, alert_from),
-      comment = COALESCE($6, comment),
-      status = 'edited',
-      lastupdate = $7,
-      lastupdateutc = $8,
-      updated_at = NOW(),
-      keep_alive_time = $9,
-      contact_name = COALESCE($10, contact_name),
-      contact_email = COALESCE($11, contact_email),
-      contact_phone_number = COALESCE($12, contact_phone_number),
-      contact_identifier = COALESCE($13, contact_identifier),
-      contact_thumbnail = COALESCE($14, contact_thumbnail),
-      contact_custom_attributes_cidade = COALESCE($15, contact_custom_attributes_cidade),
-      contact_custom_attributes_plano = COALESCE($16, contact_custom_attributes_plano),
-      contact_custom_attributes_id_externo = COALESCE($17, contact_custom_attributes_id_externo),
-      conversation_status = COALESCE($18, conversation_status),
-      conversation_custom_attributes_motivo_contato = COALESCE($19, conversation_custom_attributes_motivo_contato),
-      conversation_custom_attributes_prioridade = COALESCE($20, conversation_custom_attributes_prioridade),
-      conversation_agent_id = COALESCE($21, conversation_agent_id),
-      conversation_agent_name = COALESCE($22, conversation_agent_name),
-      conversation_agent_email = COALESCE($23, conversation_agent_email),
-      conversation_team_id = COALESCE($24, conversation_team_id),
-      conversation_team_name = COALESCE($25, conversation_team_name),
-      meta_sender_name = COALESCE($26, meta_sender_name),
-      meta_sender_email = COALESCE($27, meta_sender_email),
-      meta_sender_phone_number = COALESCE($28, meta_sender_phone_number),
-      meta_sender_identifier = COALESCE($29, meta_sender_identifier),
-      meta_sender_thumbnail = COALESCE($30, meta_sender_thumbnail),
-      meta_sender_custom_attributes_cidade = COALESCE($31, meta_sender_custom_attributes_cidade),
-      meta_sender_custom_attributes_plano = COALESCE($32, meta_sender_custom_attributes_plano),
-      meta_sender_custom_attributes_id_externo = COALESCE($33, meta_sender_custom_attributes_id_externo),
-      meta_assignee_id = COALESCE($34, meta_assignee_id),
-      meta_assignee_name = COALESCE($35, meta_assignee_name),
-      meta_assignee_email = COALESCE($36, meta_assignee_email)
-    WHERE schedule_id = $37
+    UPDATE agendamento_msg
+    SET ${setClauses}
+    WHERE schedule_id = $${values.length + 1}
     RETURNING *
   `;
-  
-  const scheduleFromUtc = schedule_from ? dayjs(schedule_from) : null;
-  const alertFromUtc = alert_from ? dayjs(alert_from) : null;
-  
-  const values = [
-    scheduleFromUtc ? scheduleFromUtc.toDate() : null, // schedule_from
-    message, // message
-    attachments ? JSON.stringify(attachments) : null, // attachments
-    alert, // alert
-    alertFromUtc ? alertFromUtc.toDate() : null, // alert_from
-    comment, // comment
-    nowSaoPaulo.toDate(), // lastupdate
-    nowSaoPaulo.toDate(), // lastupdateutc
-    nowSaoPaulo.toDate(), // keep_alive_time
-    contact?.name || null, // contact_name
-    contact?.email || null, // contact_email
-    contact?.phone_number || null, // contact_phone_number
-    contact?.identifier || null, // contact_identifier
-    contact?.thumbnail || null, // contact_thumbnail
-    contact?.custom_attributes?.cidade || null, // contact_custom_attributes_cidade
-    contact?.custom_attributes?.plano || null, // contact_custom_attributes_plano
-    contact?.custom_attributes?.id_externo || null, // contact_custom_attributes_id_externo
-    conversation?.status || null, // conversation_status
-    conversation?.custom_attributes?.motivo_contato || null, // conversation_custom_attributes_motivo_contato
-    conversation?.custom_attributes?.prioridade || null, // conversation_custom_attributes_prioridade
-    conversation?.agent?.id || null, // conversation_agent_id
-    conversation?.agent?.name || null, // conversation_agent_name
-    conversation?.agent?.email || null, // conversation_agent_email
-    conversation?.team?.id || null, // conversation_team_id
-    conversation?.team?.name || null, // conversation_team_name
-    meta?.sender?.name || null, // meta_sender_name
-    meta?.sender?.email || null, // meta_sender_email
-    meta?.sender?.phone_number || null, // meta_sender_phone_number
-    meta?.sender?.identifier || null, // meta_sender_identifier
-    meta?.sender?.thumbnail || null, // meta_sender_thumbnail
-    meta?.sender?.custom_attributes?.cidade || null, // meta_sender_custom_attributes_cidade
-    meta?.sender?.custom_attributes?.plano || null, // meta_sender_custom_attributes_plano
-    meta?.sender?.custom_attributes?.id_externo || null, // meta_sender_custom_attributes_id_externo
-    meta?.assignee?.id || null, // meta_assignee_id
-    meta?.assignee?.name || null, // meta_assignee_name
-    meta?.assignee?.email || null, // meta_assignee_email
-    schedule_id // WHERE condition
-  ];
-  
-  console.log('🔧 UPDATE DEBUG - Final values:', values);
-  console.log('🔧 UPDATE DEBUG - scheduleFromUtc:', scheduleFromUtc?.toISOString());
-  
+
+  values.push(schedule_id);
+
   const result = await executeQuery(query, values);
-  console.log('🔧 UPDATE DEBUG - Result:', JSON.stringify(result.rows[0], null, 2));
-  
   return result.rows[0];
 };
 
@@ -273,15 +231,14 @@ const cancelSchedule = async (schedule_id) => {
       status = 'cancelled',
       lastupdate = $1,
       lastupdateutc = $2,
-      updated_at = NOW(),
-      keep_alive_time = $3
+      updated_at = $3
     WHERE schedule_id = $4
     RETURNING *
   `;
   const values = [
-    nowSaoPaulo.toDate(),
-    nowSaoPaulo.toDate(),
-    nowSaoPaulo.toDate(),
+    nowSaoPaulo.format('YYYY-MM-DD HH:mm:ss'),
+    nowSaoPaulo.toISOString(),
+    nowSaoPaulo.toISOString(),
     schedule_id
   ];
   const result = await executeQuery(query, values);
