@@ -6,7 +6,7 @@ dayjs.locale('pt-br');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-import { ScheduledMessage, Contact, Conversation, Attachment } from '../types';
+import { ScheduledMessage, Contact, Conversation, Attachment, ScheduleStatus } from '../types';
 import { apiService } from './apiService';
 
 // Transform API response to frontend format
@@ -33,20 +33,18 @@ const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
 };
 
 // Transform UI message to API format  
-const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
-  // Se datetime veio do input HTML (formato YYYY-MM-DDTHH:mm), converter para ISO
+const transformToApiFormat = (uiMessage: Partial<ScheduledMessage>): any => {
   let schedule_from = uiMessage.schedule_from || uiMessage.datetime;
   console.log('🔧 FRONTEND DEBUG - Original schedule_from:', schedule_from);
-  
-  if (schedule_from && !schedule_from.includes('Z') && !schedule_from.includes('+')) {
-    // É formato datetime-local, converter para ISO assumindo São Paulo
-    const originalDate = schedule_from;
-    schedule_from = new Date(schedule_from).toISOString();
-    console.log('🔧 FRONTEND DEBUG - Converted', originalDate, 'to', schedule_from);
+
+  if (schedule_from) {
+    // Assume que a data de entrada está no formato local de São Paulo e converte para UTC ISO string
+    schedule_from = dayjs.tz(schedule_from, 'America/Sao_Paulo').toISOString();
+    console.log('🔧 FRONTEND DEBUG - Converted to ISO:', schedule_from);
   }
 
   const result = {
-    schedule_id: uiMessage.schedule_id || uiMessage.id,
+    schedule_id: uiMessage.id,
     schedule_from: schedule_from,
     message: uiMessage.message,
     attachments: uiMessage.attachments || [],
@@ -54,8 +52,8 @@ const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
     alert: uiMessage.alert || uiMessage.hasAlert || false,
     alert_from: uiMessage.alert_from,
     comment: uiMessage.comment,
-    contactid: uiMessage.contactid || uiMessage.contactId,
-    conversationid: uiMessage.conversationid || uiMessage.conversationId
+    contactid: uiMessage.contactId,
+    conversationid: uiMessage.conversationId
   };
   
   console.log('🔧 FRONTEND DEBUG - Final API data:', JSON.stringify(result, null, 2));
@@ -128,7 +126,8 @@ export const updateScheduledMessage = async (
   contact?: Contact,
   conversation?: Conversation
 ): Promise<boolean> => {
-  return await apiService.updateScheduledMessage(id, scheduleData, contact, conversation);
+  const apiData = transformToApiFormat(scheduleData);
+  return await apiService.updateScheduledMessage(id, apiData, contact, conversation);
 };
 
 export const deleteScheduledMessage = async (id: string, contactId?: number): Promise<boolean> => {
