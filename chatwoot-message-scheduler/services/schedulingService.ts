@@ -34,9 +34,16 @@ const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
 
 // Transform UI message to API format  
 const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
+  // Se datetime veio do input HTML (formato YYYY-MM-DDTHH:mm), converter para ISO
+  let schedule_from = uiMessage.schedule_from || uiMessage.datetime;
+  if (schedule_from && !schedule_from.includes('Z') && !schedule_from.includes('+')) {
+    // É formato datetime-local, converter para ISO assumindo São Paulo
+    schedule_from = new Date(schedule_from).toISOString();
+  }
+
   return {
     schedule_id: uiMessage.schedule_id || uiMessage.id,
-    schedule_from: uiMessage.schedule_from || uiMessage.datetime,
+    schedule_from: schedule_from,
     message: uiMessage.message,
     attachments: uiMessage.attachments || [],
     status: uiMessage.status,

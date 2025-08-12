@@ -209,8 +209,19 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
     RETURNING *
   `;
   
-  const scheduleFromSaoPaulo = schedule_from ? dayjs.tz(schedule_from, 'America/Sao_Paulo') : null;
-  const alertFromSaoPaulo = alert_from ? dayjs.tz(alert_from, 'America/Sao_Paulo') : null;
+  // Para UPDATE: se vier datetime-local, assumir que já está em São Paulo
+  // Se vier ISO string, converter corretamente
+  const scheduleFromSaoPaulo = schedule_from ? 
+    (schedule_from.includes('T') && !schedule_from.includes('Z') ? 
+      dayjs.tz(schedule_from, 'America/Sao_Paulo') : 
+      dayjs(schedule_from).tz('America/Sao_Paulo')
+    ) : null;
+    
+  const alertFromSaoPaulo = alert_from ? 
+    (alert_from.includes('T') && !alert_from.includes('Z') ? 
+      dayjs.tz(alert_from, 'America/Sao_Paulo') : 
+      dayjs(alert_from).tz('America/Sao_Paulo')
+    ) : null;
   
   const values = [
     scheduleFromSaoPaulo ? scheduleFromSaoPaulo.toDate() : null, // schedule_from
