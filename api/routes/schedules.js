@@ -1,5 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const {
   getSchedulesByContactId,
   createSchedule,
@@ -11,12 +17,20 @@ const {
 // Função para enviar webhook de agendamento (SEMPRE enviar)
 const sendScheduleWebhook = async (scheduleData) => {
   try {
+    const dataToSend = { ...scheduleData };
+    if (dataToSend.schedule_from) {
+      dataToSend.schedule_from = dayjs(dataToSend.schedule_from).tz('America/Sao_Paulo').format();
+    }
+    if (dataToSend.alert_from) {
+      dataToSend.alert_from = dayjs(dataToSend.alert_from).tz('America/Sao_Paulo').format();
+    }
+
     const response = await fetch(process.env.N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(scheduleData)
+      body: JSON.stringify(dataToSend)
     });
     
     if (!response.ok) {
@@ -37,12 +51,20 @@ const sendAlertWebhook = async (scheduleData) => {
   }
   
   try {
+    const dataToSend = { ...scheduleData };
+    if (dataToSend.schedule_from) {
+      dataToSend.schedule_from = dayjs(dataToSend.schedule_from).tz('America/Sao_Paulo').format();
+    }
+    if (dataToSend.alert_from) {
+      dataToSend.alert_from = dayjs(dataToSend.alert_from).tz('America/Sao_Paulo').format();
+    }
+
     const response = await fetch(process.env.N8N_ALERT_WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(scheduleData)
+      body: JSON.stringify(dataToSend)
     });
     
     if (!response.ok) {
