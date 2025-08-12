@@ -48,10 +48,37 @@ const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
   };
 };
 
+// Função para forçar limpeza de cache
+const forceCleanCache = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    // Limpar todas as chaves relacionadas a agendamentos
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('chatwoot') || key.includes('scheduled') || key.includes('agendamento'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    console.log('🧹 FORÇADO: Cache completo limpo', keysToRemove.length, 'chaves removidas');
+  } catch (error) {
+    console.error('Erro ao limpar cache:', error);
+  }
+};
+
 // Backward compatibility - these functions now use the API service
 export const getScheduledMessagesForContact = async (contactId: number): Promise<ScheduledMessage[]> => {
-  const apiMessages = await apiService.getScheduledMessagesForContact(contactId);
-  return apiMessages.map(transformScheduledMessage);
+  // Sempre forçar limpeza do cache primeiro
+  forceCleanCache();
+  
+  try {
+    const apiMessages = await apiService.getScheduledMessagesForContact(contactId);
+    return apiMessages.map(transformScheduledMessage);
+  } catch (error) {
+    console.error('Erro ao buscar da API:', error);
+    return []; // Retornar array vazio em vez de usar localStorage
+  }
 };
 
 export const saveScheduledMessagesForContact = async (

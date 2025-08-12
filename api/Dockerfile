@@ -23,8 +23,8 @@ USER nextjs
 
 EXPOSE 3000
 
-# Health check interno
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check interno - mais tolerante
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 CMD ["node", "server.js"]

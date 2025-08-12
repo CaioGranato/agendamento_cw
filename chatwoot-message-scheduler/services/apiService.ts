@@ -2,10 +2,11 @@ import { ScheduledMessage, Contact, Conversation } from '../types';
 
 // Lista de URLs da API para tentar (em ordem de prioridade)
 const API_URLS = [
-  'http://localhost:3000/api',
-  process.env.API_BASE_URL,
+  process.env.API_BASE_URL || 'https://apiag.odmax.com.br/api',
   'https://apiag.odmax.com.br/api',
   'https://apiag.odmax.com.br',
+  // Fallback para localhost apenas em desenvolvimento
+  ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000/api'] : [])
 ].filter(Boolean); // Remove valores undefined
 
 class ApiService {
