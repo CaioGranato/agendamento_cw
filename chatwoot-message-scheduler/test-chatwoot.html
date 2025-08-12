@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatwoot Integration</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .controls { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; }
+        iframe { width: 100%; height: 800px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin-right: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .json-display { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Chatwoot Message Scheduler Integration</h1>
+        
+        <div class="controls">
+            <h3>Simular Dados do Chatwoot:</h3>
+            <button onclick="sendChatwootData()">Enviar Dados do Contato</button>
+            <button onclick="clearData()">Limpar Dados</button>
+            
+            <div class="json-display">
+                <strong>Dados que serão enviados:</strong>
+                <pre id="dataDisplay"></pre>
+            </div>
+        </div>
+        
+        <iframe id="appIframe" src="http://localhost:5173/"></iframe>
+    </div>
+
+    <script>
+        const mockChatwootData = {
+            event: 'appContext',
+            data: {
+                contact: {
+                    id: 3,
+                    name: "Caio Granato",
+                    email: "caio@granato.com.br",
+                    phone_number: "+5511999999999",
+                    identifier: "vivo0451",
+                    thumbnail: "https://example.com/avatar.jpg",
+                    custom_attributes: {
+                        cidade: "São Paulo",
+                        plano: "Premium",
+                        id_externo: "EXT123456"
+                    }
+                },
+                conversation: {
+                    id: 12,
+                    status: "open",
+                    inbox_id: 1,
+                    agent: {
+                        id: 1,
+                        name: "Agent Test",
+                        email: "agent@test.com"
+                    },
+                    team: {
+                        id: 1,
+                        name: "Support Team"
+                    },
+                    custom_attributes: {
+                        motivo_contato: "Suporte Técnico",
+                        prioridade: "Alta"
+                    }
+                },
+                meta: {
+                    sender: {
+                        id: 3,
+                        name: "Caio Granato",
+                        email: "caio@granato.com.br",
+                        phone_number: "+5511999999999",
+                        identifier: "vivo0451",
+                        thumbnail: "https://example.com/avatar.jpg",
+                        custom_attributes: {
+                            cidade: "São Paulo",
+                            plano: "Premium",
+                            id_externo: "EXT123456"
+                        }
+                    },
+                    assignee: {
+                        id: 1,
+                        name: "Agent Test",
+                        email: "agent@test.com"
+                    }
+                }
+            }
+        };
+
+        function sendChatwootData() {
+            const iframe = document.getElementById('appIframe');
+            const dataString = JSON.stringify(mockChatwootData);
+            
+            // Enviar dados para o iframe
+            iframe.contentWindow.postMessage(dataString, '*');
+            
+            // Mostrar os dados na tela
+            document.getElementById('dataDisplay').textContent = JSON.stringify(mockChatwootData, null, 2);
+            
+            console.log('Dados enviados para o iframe:', mockChatwootData);
+        }
+
+        function clearData() {
+            document.getElementById('dataDisplay').textContent = '';
+        }
+
+        // Escutar por mensagens do iframe
+        window.addEventListener('message', function(event) {
+            if (event.data === 'chatwoot-dashboard-app:fetch-info') {
+                console.log('App solicitou dados do Chatwoot, enviando...');
+                setTimeout(() => sendChatwootData(), 500); // Simula delay
+            }
+        });
+
+        // Mostrar dados iniciais
+        document.getElementById('dataDisplay').textContent = JSON.stringify(mockChatwootData, null, 2);
+    </script>
+</body>
+</html>

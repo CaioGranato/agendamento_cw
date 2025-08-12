@@ -953,14 +953,30 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 // Status Badge Component
 const StatusBadge = ({ status }: { status: ScheduleStatus }) => {
     const statusClasses: Record<ScheduleStatus, string> = {
-        'Agendado': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-        'Enviado': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-        'Cancelado': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        'Falhou': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+        'scheduled': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+        'agendado': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+        'edited': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+        'editado': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+        'processing': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+        'sent': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+        'cancelled': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+        'error': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
     };
+
+    const statusLabels: Record<ScheduleStatus, string> = {
+        'scheduled': 'Agendado',
+        'agendado': 'Agendado',
+        'edited': 'Editado', 
+        'editado': 'Editado',
+        'processing': 'Processando',
+        'sent': 'Enviado',
+        'cancelled': 'Cancelado',
+        'error': 'Erro'
+    };
+
     return (
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[status]}`}>
-            {status}
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[status] || statusClasses['scheduled']}`}>
+            {statusLabels[status] || status}
         </span>
     );
 };
@@ -983,7 +999,7 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday, hasAlert }: 
         minute: '2-digit',
     });
 
-    const canBeModified = status === 'Agendado';
+    const canBeModified = status === 'scheduled' || status === 'agendado' || status === 'edited' || status === 'editado';
 
     return (
         <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm mb-3 transition-all hover:shadow-md">
@@ -1069,7 +1085,7 @@ export default function App() {
             const loadMessages = async () => {
                 try {
                     const messages = await getScheduledMessagesForContact(appContext.contact.id);
-                    const activeMessages = messages.filter(msg => msg.status !== 'Cancelado');
+                    const activeMessages = messages.filter(msg => msg.status !== 'cancelled');
                     setScheduledMessages(activeMessages);
                 } catch (error) {
                     console.error('Failed to load scheduled messages:', error);
@@ -1081,8 +1097,8 @@ export default function App() {
 
     const sortedMessages = useMemo(() => {
         return [...scheduledMessages]
-            .filter(msg => msg.status !== 'Cancelado')
-            .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+            .filter(msg => msg.status !== 'cancelled')
+            .sort((a, b) => new Date(a.datetime || a.schedule_from).getTime() - new Date(b.datetime || b.schedule_from).getTime());
     }, [scheduledMessages]);
 
     const leftColumn = sortedMessages.filter((_, index) => index % 2 === 0);
@@ -1135,7 +1151,7 @@ export default function App() {
 
             if (success) {
                 const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
-                const activeMessages = updatedMessages.filter(msg => msg.status !== 'Cancelado');
+                const activeMessages = updatedMessages.filter(msg => msg.status !== 'cancelled');
                 setScheduledMessages(activeMessages);
                 
                 alert(isEditing ? 'Agendamento atualizado com sucesso!' : 'Agendamento realizado com sucesso!');
@@ -1187,13 +1203,13 @@ export default function App() {
             
             if (success) {
                 const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
-                const activeMessages = updatedMessages.filter(msg => msg.status !== 'Cancelado');
+                const activeMessages = updatedMessages.filter(msg => msg.status !== 'cancelled');
                 setScheduledMessages(activeMessages);
                 alert('Agendamento cancelado com sucesso.');
             } else {
                 // Mesmo que a API falhe, atualizar a lista local
                 const updatedMessages = await getScheduledMessagesForContact(appContext.contact.id);
-                const activeMessages = updatedMessages.filter(msg => msg.status !== 'Cancelado');
+                const activeMessages = updatedMessages.filter(msg => msg.status !== 'cancelled');
                 setScheduledMessages(activeMessages);
                 alert('Agendamento removido localmente. Será sincronizado quando a conexão for restabelecida.');
             }

@@ -23,20 +23,28 @@ export interface Attachment {
   base64?: string; // base64 with data URI scheme
 }
 
-export type ScheduleStatus = 'Agendado' | 'Enviado' | 'Cancelado' | 'Falhou';
+export type ScheduleStatus = 'scheduled' | 'agendado' | 'edited' | 'editado' | 'processing' | 'sent' | 'error' | 'cancelled';
 
 export interface ScheduledMessage {
-  id: string; // Using UUID for unique ID
-  datetime: string; // ISO string for datetime-local
+  schedule_id: string; // UUID from database
+  schedule_from: string; // ISO timestamp from database
   message: string;
-  attachments: Attachment[];
+  attachments: any[]; // JSON array from database
   status: ScheduleStatus;
-  contactId: number;
-  conversationId: number;
-  lastUpdate?: string; // Novo campo para a última atualização (ISO string)
-  edit_id?: string; // ID gerado quando o agendamento é editado
-  previous_edit_ids?: string[]; // Array com histórico de edit_ids anteriores
-  exc_id?: string; // ID gerado quando o agendamento é cancelado
-  scheduled_for?: string; // Horário agendado em São Paulo (YYYY-MM-DD HH:mm:ss)
-  hasAlert?: boolean; // Campo para indicar se o alerta foi ativado
+  contactid: number; // From database (lowercase)
+  conversationid: number; // From database (lowercase) 
+  alert?: boolean;
+  alert_from?: string;
+  comment?: string;
+  lastupdate?: string;
+  edit_id?: string;
+  previous_edit_ids?: string[];
+  
+  // Computed fields for UI compatibility
+  id?: string; // Maps to schedule_id
+  datetime?: string; // Maps to schedule_from
+  contactId?: number; // Maps to contactid
+  conversationId?: number; // Maps to conversationid
+  lastUpdate?: string; // Maps to lastupdate
+  hasAlert?: boolean; // Maps to alert
 }

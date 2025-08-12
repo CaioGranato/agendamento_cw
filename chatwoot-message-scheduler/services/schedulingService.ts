@@ -9,9 +9,42 @@ dayjs.extend(timezone);
 import { ScheduledMessage, Contact, Conversation, Attachment } from '../types';
 import { apiService } from './apiService';
 
+// Transform API response to frontend format
+const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
+  return {
+    ...apiMessage,
+    // Map database fields to UI-compatible fields
+    id: apiMessage.schedule_id,
+    datetime: apiMessage.schedule_from,
+    contactId: apiMessage.contactid,
+    conversationId: apiMessage.conversationid,
+    lastUpdate: apiMessage.lastupdate,
+    hasAlert: apiMessage.alert || false,
+    // Ensure attachments is an array
+    attachments: Array.isArray(apiMessage.attachments) ? apiMessage.attachments : []
+  };
+};
+
+// Transform UI message to API format  
+const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
+  return {
+    schedule_id: uiMessage.schedule_id || uiMessage.id,
+    schedule_from: uiMessage.schedule_from || uiMessage.datetime,
+    message: uiMessage.message,
+    attachments: uiMessage.attachments || [],
+    status: uiMessage.status,
+    alert: uiMessage.alert || uiMessage.hasAlert || false,
+    alert_from: uiMessage.alert_from,
+    comment: uiMessage.comment,
+    contactid: uiMessage.contactid || uiMessage.contactId,
+    conversationid: uiMessage.conversationid || uiMessage.conversationId
+  };
+};
+
 // Backward compatibility - these functions now use the API service
 export const getScheduledMessagesForContact = async (contactId: number): Promise<ScheduledMessage[]> => {
-  return await apiService.getScheduledMessagesForContact(contactId);
+  const apiMessages = await apiService.getScheduledMessagesForContact(contactId);
+  return apiMessages.map(transformScheduledMessage);
 };
 
 export const saveScheduledMessagesForContact = async (
@@ -37,7 +70,8 @@ export const createScheduledMessage = async (
   contact: Contact,
   conversation: Conversation
 ): Promise<boolean> => {
-  return await apiService.saveScheduledMessage(scheduleData, contact, conversation);
+  const apiData = transformToApiFormat(scheduleData);
+  return await apiService.saveScheduledMessage(apiData, contact, conversation);
 };
 
 export const updateScheduledMessage = async (
