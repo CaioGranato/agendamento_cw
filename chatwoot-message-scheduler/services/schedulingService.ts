@@ -36,12 +36,16 @@ const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
 const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
   // Se datetime veio do input HTML (formato YYYY-MM-DDTHH:mm), converter para ISO
   let schedule_from = uiMessage.schedule_from || uiMessage.datetime;
+  console.log('🔧 FRONTEND DEBUG - Original schedule_from:', schedule_from);
+  
   if (schedule_from && !schedule_from.includes('Z') && !schedule_from.includes('+')) {
     // É formato datetime-local, converter para ISO assumindo São Paulo
+    const originalDate = schedule_from;
     schedule_from = new Date(schedule_from).toISOString();
+    console.log('🔧 FRONTEND DEBUG - Converted', originalDate, 'to', schedule_from);
   }
 
-  return {
+  const result = {
     schedule_id: uiMessage.schedule_id || uiMessage.id,
     schedule_from: schedule_from,
     message: uiMessage.message,
@@ -53,6 +57,9 @@ const transformToApiFormat = (uiMessage: ScheduledMessage): any => {
     contactid: uiMessage.contactid || uiMessage.contactId,
     conversationid: uiMessage.conversationid || uiMessage.conversationId
   };
+  
+  console.log('🔧 FRONTEND DEBUG - Final API data:', JSON.stringify(result, null, 2));
+  return result;
 };
 
 // Função para forçar limpeza de cache

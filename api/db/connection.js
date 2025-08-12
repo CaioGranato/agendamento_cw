@@ -152,6 +152,10 @@ const createSchedule = async (scheduleData, chatwootData) => {
 };
 
 const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
+  console.log('🔧 UPDATE DEBUG - schedule_id:', schedule_id);
+  console.log('🔧 UPDATE DEBUG - scheduleData:', JSON.stringify(scheduleData, null, 2));
+  console.log('🔧 UPDATE DEBUG - chatwootData:', JSON.stringify(chatwootData, null, 2));
+
   const {
     schedule_from,
     message,
@@ -263,7 +267,12 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
     schedule_id // WHERE condition
   ];
   
+  console.log('🔧 UPDATE DEBUG - Final values:', values);
+  console.log('🔧 UPDATE DEBUG - scheduleFromSaoPaulo:', scheduleFromSaoPaulo?.toISOString());
+  
   const result = await executeQuery(query, values);
+  console.log('🔧 UPDATE DEBUG - Result:', JSON.stringify(result.rows[0], null, 2));
+  
   return result.rows[0];
 };
 
