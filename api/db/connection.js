@@ -89,13 +89,13 @@ const createSchedule = async (scheduleData, chatwootData) => {
     RETURNING *
   `;
   
-  const scheduleFromSaoPaulo = dayjs.tz(schedule_from, 'America/Sao_Paulo');
-  const alertFromSaoPaulo = alert_from ? dayjs.tz(alert_from, 'America/Sao_Paulo') : null;
+  const scheduleFromUtc = dayjs(schedule_from);
+  const alertFromUtc = alert_from ? dayjs(alert_from) : null;
   
   const values = [
-    scheduleFromSaoPaulo.toDate(), // schedule_from
+    scheduleFromUtc.toDate(), // schedule_from
     alert, // alert
-    alertFromSaoPaulo ? alertFromSaoPaulo.toDate() : null, // alert_from
+    alertFromUtc ? alertFromUtc.toDate() : null, // alert_from
     comment || null, // comment
     message, // message
     JSON.stringify(attachments), // attachments
@@ -213,26 +213,15 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
     RETURNING *
   `;
   
-  // Para UPDATE: se vier datetime-local, assumir que já está em São Paulo
-  // Se vier ISO string, converter corretamente
-  const scheduleFromSaoPaulo = schedule_from ? 
-    (schedule_from.includes('T') && !schedule_from.includes('Z') ? 
-      dayjs.tz(schedule_from, 'America/Sao_Paulo') : 
-      dayjs(schedule_from).tz('America/Sao_Paulo')
-    ) : null;
-    
-  const alertFromSaoPaulo = alert_from ? 
-    (alert_from.includes('T') && !alert_from.includes('Z') ? 
-      dayjs.tz(alert_from, 'America/Sao_Paulo') : 
-      dayjs(alert_from).tz('America/Sao_Paulo')
-    ) : null;
+  const scheduleFromUtc = schedule_from ? dayjs(schedule_from) : null;
+  const alertFromUtc = alert_from ? dayjs(alert_from) : null;
   
   const values = [
-    scheduleFromSaoPaulo ? scheduleFromSaoPaulo.toDate() : null, // schedule_from
+    scheduleFromUtc ? scheduleFromUtc.toDate() : null, // schedule_from
     message, // message
     attachments ? JSON.stringify(attachments) : null, // attachments
     alert, // alert
-    alertFromSaoPaulo ? alertFromSaoPaulo.toDate() : null, // alert_from
+    alertFromUtc ? alertFromUtc.toDate() : null, // alert_from
     comment, // comment
     nowSaoPaulo.toDate(), // lastupdate
     nowSaoPaulo.toDate(), // lastupdateutc
@@ -268,7 +257,7 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
   ];
   
   console.log('🔧 UPDATE DEBUG - Final values:', values);
-  console.log('🔧 UPDATE DEBUG - scheduleFromSaoPaulo:', scheduleFromSaoPaulo?.toISOString());
+  console.log('🔧 UPDATE DEBUG - scheduleFromUtc:', scheduleFromUtc?.toISOString());
   
   const result = await executeQuery(query, values);
   console.log('🔧 UPDATE DEBUG - Result:', JSON.stringify(result.rows[0], null, 2));
