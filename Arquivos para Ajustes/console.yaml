@@ -1,0 +1,54 @@
+contentscript.js:85 waitForRuntimeReady
+contentscript.js:89 waitForRuntimeReady ready
+contentscript.js:45 init
+contentscript.js:49 contentscript onMessage undefined Object Object
+contentscript.js:49 contentscript onMessage requestInfo Object Object
+contentscript.js:49 contentscript onMessage undefined Object Object
+65:1 Autofocus processing was blocked because a document already has a focused element.
+/api/v1/accounts/1/contacts/3:1  Failed to load resource: the server responded with a status of 500 ()
+contentscript.js:49 contentscript onMessage requestInfo Object Object
+contentscript.js:49 contentscript onMessage undefined Object Object
+Error with Permissions-Policy header: Unrecognized feature: 'browsing-topics'.
+(index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
+(anonymous) @ (index):64
+apiService.ts:54 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/health:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/api/health:1  Failed to load resource: net::ERR_FAILED
+apiService.ts:62 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
+findWorkingApi @ apiService.ts:62
+apiService.ts:54 🔍 Testando conexão com API: https://apiag.odmax.com.br
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/health:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/health:1  Failed to load resource: net::ERR_FAILED
+apiService.ts:62 ❌ Falha ao conectar com: https://apiag.odmax.com.br
+findWorkingApi @ apiService.ts:62
+apiService.ts:54 🔍 Testando conexão com API: http://localhost:3001/api
+localhost:3001/api/health:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
+localhost:3001/api/:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
+localhost:3001/api/api/health:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
+apiService.ts:62 ❌ Falha ao conectar com: http://localhost:3001/api
+findWorkingApi @ apiService.ts:62
+apiService.ts:66 ⚠️ Nenhuma API disponível. Usando fallback para localStorage.
+findWorkingApi @ apiService.ts:66
+apiService.ts:114 💥 API request failed: Error: API não disponível - usando fallback local
+    at _.findWorkingApi (apiService.ts:67:11)
+    at async _.makeRequest (apiService.ts:81:23)
+    at async _.getScheduledMessagesForContact (apiService.ts:133:14)
+    at async $ (schedulingService.ts:14:10)
+    at async App.tsx:1071:38
+makeRequest @ apiService.ts:114
+apiService.ts:135 Failed to fetch scheduled messages: Error: API não disponível - usando fallback local
+    at _.findWorkingApi (apiService.ts:67:11)
+    at async _.makeRequest (apiService.ts:81:23)
+    at async _.getScheduledMessagesForContact (apiService.ts:133:14)
+    at async $ (schedulingService.ts:14:10)
+    at async App.tsx:1071:38
+getScheduledMessagesForContact @ apiService.ts:135
+12:1 The resource https://chat.odtravel.com.br/packs/js/application-f13b0b8187f5a6f3a205.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.

@@ -2,11 +2,10 @@ import { ScheduledMessage, Contact, Conversation } from '../types';
 
 // Lista de URLs da API para tentar (em ordem de prioridade)
 const API_URLS = [
+  'http://localhost:3000/api',
   process.env.API_BASE_URL,
   'https://apiag.odmax.com.br/api',
   'https://apiag.odmax.com.br',
-  // Fallback para localhost em desenvolvimento
-  'http://localhost:3001/api'
 ].filter(Boolean); // Remove valores undefined
 
 class ApiService {
@@ -14,7 +13,7 @@ class ApiService {
   private hasValidConnection = false;
 
   private get currentApiUrl(): string {
-    return API_URLS[this.currentApiIndex] || API_URLS[0];
+    return API_URLS[this.currentApiIndex] || API_URLS[0] || 'http://localhost:3000/api';
   }
 
   private async testApiConnection(baseUrl: string): Promise<boolean> {
@@ -51,6 +50,8 @@ class ApiService {
     // Testa cada URL da lista
     for (let i = 0; i < API_URLS.length; i++) {
       const apiUrl = API_URLS[i];
+      if (!apiUrl) continue;
+      
       console.log(`🔍 Testando conexão com API: ${apiUrl}`);
       
       if (await this.testApiConnection(apiUrl)) {
@@ -72,7 +73,6 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 10000, // 10 segundos timeout
     };
 
     const requestOptions = { ...defaultOptions, ...options };
@@ -118,7 +118,7 @@ class ApiService {
       
       // Se ainda há outras APIs para tentar e este foi um erro de conectividade
       if (this.currentApiIndex < API_URLS.length - 1 && 
-          (error instanceof TypeError || error.message.includes('fetch'))) {
+          (error instanceof TypeError || (error instanceof Error && error.message.includes('fetch')))) {
         console.log('🔄 Tentando próxima API...');
         this.currentApiIndex++;
         return this.makeRequest(endpoint, options); // Recursive retry
