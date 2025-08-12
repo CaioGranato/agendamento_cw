@@ -5,14 +5,18 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS Middleware com configuração completa
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: false,
-  optionsSuccessStatus: 200
-}));
+// CORS Middleware robusto - HANDLE TUDO
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -25,12 +29,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root endpoint
+// Root endpoint com debug info
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Agendamento CW API', 
     status: 'running',
-    endpoints: ['/health', '/api/schedules']
+    timestamp: new Date().toISOString(),
+    endpoints: ['/health', '/api/schedules'],
+    cors: 'enabled',
+    env: process.env.NODE_ENV
   });
 });
 

@@ -52,12 +52,6 @@ services:
         - "traefik.http.routers.agendamento-api.tls=true"
         - "traefik.http.routers.agendamento-api.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.agendamento-api.loadbalancer.server.port=3000"
-        - "traefik.http.routers.agendamento-api.middlewares=agendamento-api-cors@docker"
-        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
-        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolalloworigin=*"
-        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolallowheaders=*"
-        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolmaxage=86400"
-        - "traefik.http.middlewares.agendamento-api-cors.headers.addvaryheader=true"
     # Healthcheck temporariamente desabilitado para debug
     # healthcheck:
     #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
