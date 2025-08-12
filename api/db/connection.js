@@ -87,8 +87,8 @@ const createSchedule = async (scheduleData, chatwootData) => {
     RETURNING *
   `;
 
-  const scheduleFromString = schedule_from ? dayjs.tz(schedule_from, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss') : null;
-  const alertFromString = alert_from ? dayjs.tz(alert_from, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss') : null;
+  const scheduleFromString = schedule_from;
+  const alertFromString = alert_from;
 
   const values = [
     scheduleFromString,
@@ -192,7 +192,7 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
   for (const [key, value] of Object.entries(dataMapping)) {
     if (value !== undefined && value !== null) {
       if (key === 'schedule_from' || key === 'alert_from') {
-        fieldsToUpdate[key] = dayjs.tz(value, 'America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss');
+        fieldsToUpdate[key] = value;
       } else if (key === 'attachments') {
         fieldsToUpdate[key] = JSON.stringify(value);
       } else {

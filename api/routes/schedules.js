@@ -18,12 +18,6 @@ const {
 const sendScheduleWebhook = async (scheduleData) => {
   try {
     const dataToSend = { ...scheduleData };
-    if (dataToSend.schedule_from) {
-      dataToSend.schedule_from = dayjs(dataToSend.schedule_from).tz('America/Sao_Paulo').format();
-    }
-    if (dataToSend.alert_from) {
-      dataToSend.alert_from = dayjs(dataToSend.alert_from).tz('America/Sao_Paulo').format();
-    }
 
     const response = await fetch(process.env.N8N_WEBHOOK_URL, {
       method: 'POST',
@@ -52,12 +46,6 @@ const sendAlertWebhook = async (scheduleData) => {
   
   try {
     const dataToSend = { ...scheduleData };
-    if (dataToSend.schedule_from) {
-      dataToSend.schedule_from = dayjs(dataToSend.schedule_from).tz('America/Sao_Paulo').format();
-    }
-    if (dataToSend.alert_from) {
-      dataToSend.alert_from = dayjs(dataToSend.alert_from).tz('America/Sao_Paulo').format();
-    }
 
     const response = await fetch(process.env.N8N_ALERT_WEBHOOK_URL, {
       method: 'POST',
