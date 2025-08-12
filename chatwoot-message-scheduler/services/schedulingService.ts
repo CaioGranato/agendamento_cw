@@ -11,14 +11,21 @@ import { apiService } from './apiService';
 
 // Transform API response to frontend format
 const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
+  // Validar e corrigir datas
+  const validateDate = (dateStr: string) => {
+    if (!dateStr) return new Date().toISOString();
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+  };
+
   return {
     ...apiMessage,
     // Map database fields to UI-compatible fields
     id: apiMessage.schedule_id,
-    datetime: apiMessage.schedule_from,
+    datetime: validateDate(apiMessage.schedule_from),
     contactId: apiMessage.contactid,
     conversationId: apiMessage.conversationid,
-    lastUpdate: apiMessage.lastupdate,
+    lastUpdate: validateDate(apiMessage.lastupdate),
     hasAlert: apiMessage.alert || false,
     // Ensure attachments is an array
     attachments: Array.isArray(apiMessage.attachments) ? apiMessage.attachments : []

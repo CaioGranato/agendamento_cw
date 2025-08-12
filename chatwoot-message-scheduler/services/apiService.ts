@@ -58,6 +58,8 @@ class ApiService {
         console.log(`✅ Conexão estabelecida com: ${apiUrl}`);
         this.currentApiIndex = i;
         this.hasValidConnection = true;
+        // Limpar localStorage quando conseguir conectar com API
+        this.clearLocalStorageCache();
         return apiUrl;
       } else {
         console.warn(`❌ Falha ao conectar com: ${apiUrl}`);
@@ -285,6 +287,25 @@ class ApiService {
       console.log('✅ Agendamento removido do localStorage');
     } catch (error) {
       console.error("Failed to delete scheduled message from localStorage:", error);
+    }
+  }
+
+  private clearLocalStorageCache(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      // Limpar todas as chaves de agendamentos do localStorage
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('chatwoot_scheduled_messages_')) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log('🧹 Cache localStorage limpo após conexão com API');
+    } catch (error) {
+      console.error("Failed to clear localStorage cache:", error);
     }
   }
 }

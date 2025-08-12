@@ -29,11 +29,11 @@ services:
           - node.role == manager
       resources:
         limits:
-          cpus: "1.0"
-          memory: 1024M
+          cpus: "1.5"
+          memory: 1536M
         reservations:
-          cpus: "0.2"
-          memory: 256M
+          cpus: "0.3"
+          memory: 512M
       restart_policy:
         condition: on-failure
         delay: 15s
@@ -59,11 +59,11 @@ services:
         - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolallowheaders=*"
         - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolmaxage=86400"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
 
   # Frontend Service
   frontend:
