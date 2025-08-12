@@ -1,0 +1,121 @@
+version: "3.8"
+
+services:
+  # API Backend Service
+  api:
+    image: granatocaio/agendamento-cw-api:latest
+    networks:
+      - odmaxnet
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=America/Sao_Paulo
+      - DATABASE_URL=postgresql://postgres.gxbddlgvbzeyidbqyvcg:UoKbaKsC7s3waGEa@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
+      - SUPABASE_HOST=aws-1-sa-east-1.pooler.supabase.com
+      - SUPABASE_DATABASE=postgres
+      - SUPABASE_USER=postgres.gxbddlgvbzeyidbqyvcg
+      - SUPABASE_PASSWORD=UoKbaKsC7s3waGEa
+      - SUPABASE_URL=https://gxbddlgvbzeyidbqyvcg.supabase.co
+      - SUPABASE_ANON_KEY=sb_publishable_N-CZvYtuBDy_JPune_OggA_1eA4OOAt
+      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
+      - N8N_ALERT_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
+      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - CORS_ORIGIN=*
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-api.rule=Host(`apiag.odmax.com.br`)"
+        - "traefik.http.routers.agendamento-api.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-api.tls=true"
+        - "traefik.http.routers.agendamento-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-api.loadbalancer.server.port=3000"
+        - "traefik.http.routers.agendamento-api.middlewares=agendamento-api-cors,agendamento-api-headers"
+        - "traefik.http.middlewares.agendamento-api-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
+        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolalloworigin=*"
+        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolallowheaders=*"
+        - "traefik.http.middlewares.agendamento-api-cors.headers.accesscontrolmaxage=86400"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend Service
+  frontend:
+    image: granatocaio/agendamento-cw-frontend:latest
+    networks:
+      - odmaxnet
+    environment:
+      - API_BASE_URL=https://apiag.odmax.com.br/api
+      - VITE_API_BASE_URL=https://apiag.odmax.com.br/api
+      - VITE_N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
+      - VITE_N8N_ALERT_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=odmaxnet"
+        - "traefik.http.routers.agendamento-frontend.rule=Host(`agcw.odmax.com.br`)"
+        - "traefik.http.routers.agendamento-frontend.entrypoints=websecure"
+        - "traefik.http.routers.agendamento-frontend.tls=true"
+        - "traefik.http.routers.agendamento-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento-frontend.loadbalancer.server.port=80"
+        - "traefik.http.routers.agendamento-frontend.middlewares=agendamento-frontend-headers"
+        - "traefik.http.middlewares.agendamento-frontend-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  odmaxnet:
+    external: true
+    name: odmaxnet
