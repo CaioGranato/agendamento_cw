@@ -3,47 +3,319 @@ contentscript.js:89 waitForRuntimeReady ready
 contentscript.js:45 init
 contentscript.js:49 contentscript onMessage undefined Object Object
 contentscript.js:49 contentscript onMessage undefined Object Object
-12:1 Autofocus processing was blocked because a document already has a focused element.
+38:1 Autofocus processing was blocked because a document already has a focused element.
+/api/v1/accounts/1/contacts/23:1  Failed to load resource: the server responded with a status of 500 ()
 Error with Permissions-Policy header: Unrecognized feature: 'browsing-topics'.
 (index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
 (anonymous) @ (index):64
-apiService.ts:55 🔍 Testando conexão com API: http://localhost:3000/api
-localhost:3000/api/health:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
-localhost:3000/api/:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
-localhost:3000/api/api/health:1  Failed to load resource: net::ERR_CONNECTION_REFUSED
-apiService.ts:63 ❌ Falha ao conectar com: http://localhost:3000/api
-findWorkingApi @ apiService.ts:63
-apiService.ts:55 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
+schedulingService.ts:64 🧹 FORÇADO: Cache completo limpo 1 chaves removidas
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/api/health:1  Failed to load resource: net::ERR_FAILED
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/api/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/api/:1  Failed to load resource: net::ERR_FAILED
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/api/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/api/api/health:1  Failed to load resource: net::ERR_FAILED
-apiService.ts:63 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
-findWorkingApi @ apiService.ts:63
-apiService.ts:55 🔍 Testando conexão com API: https://apiag.odmax.com.br
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
+findWorkingApi @ apiService.ts:66
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/health:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiag.odmax.com.br/api/api/health:1  Failed to load resource: net::ERR_FAILED
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
+findWorkingApi @ apiService.ts:66
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/health:1  Failed to load resource: net::ERR_FAILED
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/:1  Failed to load resource: net::ERR_FAILED
 (index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 apiag.odmax.com.br/api/health:1  Failed to load resource: net::ERR_FAILED
-apiService.ts:63 ❌ Falha ao conectar com: https://apiag.odmax.com.br
-findWorkingApi @ apiService.ts:63
-apiService.ts:67 ⚠️ Nenhuma API disponível. Usando fallback para localStorage.
-findWorkingApi @ apiService.ts:67
-apiService.ts:114 💥 API request failed: Error: API não disponível - usando fallback local
-    at Y.findWorkingApi (apiService.ts:68:11)
-    at async Y.makeRequest (apiService.ts:81:23)
-    at async Y.getScheduledMessagesForContact (apiService.ts:133:14)
-    at async _ (schedulingService.ts:46:23)
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br
+findWorkingApi @ apiService.ts:66
+apiService.ts:70 ⚠️ Nenhuma API disponível. Usando fallback para localStorage.
+findWorkingApi @ apiService.ts:70
+apiService.ts:117 💥 API request failed: Error: API não disponível - usando fallback local
+    at B.findWorkingApi (apiService.ts:71:11)
+    at async B.makeRequest (apiService.ts:84:23)
+    at async B.getScheduledMessagesForContact (apiService.ts:136:14)
+    at async _ (schedulingService.ts:76:25)
     at async App.tsx:1087:38
-makeRequest @ apiService.ts:114
-apiService.ts:135 Failed to fetch scheduled messages: Error: API não disponível - usando fallback local
-    at Y.findWorkingApi (apiService.ts:68:11)
-    at async Y.makeRequest (apiService.ts:81:23)
-    at async Y.getScheduledMessagesForContact (apiService.ts:133:14)
-    at async _ (schedulingService.ts:46:23)
+makeRequest @ apiService.ts:117
+apiService.ts:138 Failed to fetch scheduled messages: Error: API não disponível - usando fallback local
+    at B.findWorkingApi (apiService.ts:71:11)
+    at async B.makeRequest (apiService.ts:84:23)
+    at async B.getScheduledMessagesForContact (apiService.ts:136:14)
+    at async _ (schedulingService.ts:76:25)
     at async App.tsx:1087:38
-getScheduledMessagesForContact @ apiService.ts:135
+getScheduledMessagesForContact @ apiService.ts:138
+webhookService.ts:39  POST https://webhookn8n.odtravel.com.br/webhook/alert-webhook-id 500 (Internal Server Error)
+O @ webhookService.ts:39
+(anonymous) @ App.tsx:1143
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+webhookService.ts:48 Alert webhook sent successfully
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+findWorkingApi @ apiService.ts:58
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/ net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/api/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
+findWorkingApi @ apiService.ts:66
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br/api
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/ net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/api/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br/api
+findWorkingApi @ apiService.ts:66
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:56 🔍 Testando conexão com API: https://apiag.odmax.com.br
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/ net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+(index):1 Access to fetch at 'https://apiag.odmax.com.br/api/health' from origin 'https://agcw.odmax.com.br' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+apiService.ts:27  GET https://apiag.odmax.com.br/api/health net::ERR_FAILED 404 (Not Found)
+testApiConnection @ apiService.ts:27
+await in testApiConnection
+findWorkingApi @ apiService.ts:58
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:66 ❌ Falha ao conectar com: https://apiag.odmax.com.br
+findWorkingApi @ apiService.ts:66
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:70 ⚠️ Nenhuma API disponível. Usando fallback para localStorage.
+findWorkingApi @ apiService.ts:70
+await in findWorkingApi
+makeRequest @ apiService.ts:84
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:117 💥 API request failed: Error: API não disponível - usando fallback local
+    at B.findWorkingApi (apiService.ts:71:11)
+    at async B.makeRequest (apiService.ts:84:23)
+    at async B.saveScheduledMessage (apiService.ts:150:7)
+    at async j (schedulingService.ts:108:10)
+    at async App.tsx:1149:27
+makeRequest @ apiService.ts:117
+await in makeRequest
+saveScheduledMessage @ apiService.ts:150
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
+apiService.ts:160 Failed to save scheduled message: Error: API não disponível - usando fallback local
+    at B.findWorkingApi (apiService.ts:71:11)
+    at async B.makeRequest (apiService.ts:84:23)
+    at async B.saveScheduledMessage (apiService.ts:150:7)
+    at async j (schedulingService.ts:108:10)
+    at async App.tsx:1149:27
+saveScheduledMessage @ apiService.ts:160
+await in saveScheduledMessage
+j @ schedulingService.ts:108
+(anonymous) @ App.tsx:1149
+await in (anonymous)
+r @ App.tsx:815
+Dv @ react-dom-client.production.js:11858
+(anonymous) @ react-dom-client.production.js:12410
+U0 @ react-dom-client.production.js:1470
+Lf @ react-dom-client.production.js:11996
+Ye @ react-dom-client.production.js:14699
+md @ react-dom-client.production.js:14667
