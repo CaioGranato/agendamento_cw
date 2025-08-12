@@ -725,10 +725,28 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 
     const isEditing = !!editingMessage;
 
+    // Função para converter ISO string para datetime-local format
+    const formatDatetimeLocal = (isoString: string): string => {
+        if (!isoString) return '';
+        try {
+            const date = new Date(isoString);
+            // Formato datetime-local: YYYY-MM-DDTHH:mm
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return '';
+        }
+    };
+
     useEffect(() => {
         if (editingMessage) {
             setMessage(editingMessage.message);
-            setDatetime(editingMessage.datetime);
+            setDatetime(formatDatetimeLocal(editingMessage.datetime));
             setAttachments(editingMessage.attachments || []);
             setCreateAlert(editingMessage.hasAlert || false);
         } else {
