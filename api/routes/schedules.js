@@ -189,6 +189,13 @@ router.delete('/:schedule_id', async (req, res) => {
     // Cancelar o agendamento (status será 'cancelled')
     const cancelledSchedule = await cancelSchedule(schedule_id);
     
+    // Enviar para webhook de agendamento N8N
+    const scheduleWebhookSuccess = await sendScheduleWebhook(cancelledSchedule);
+    if (!scheduleWebhookSuccess) {
+      // Apenas loga o aviso, mas não impede o sucesso da operação
+      console.warn('Failed to send cancelled schedule webhook to N8N');
+    }
+
     res.json({ message: 'Schedule cancelled successfully', schedule: cancelledSchedule });
   } catch (error) {
     console.error('Error cancelling schedule:', error);
