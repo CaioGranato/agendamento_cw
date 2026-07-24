@@ -6,7 +6,6 @@ import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
 import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
 import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
-import { sendAlertWebhook } from './services/webhookService';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -713,13 +712,14 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
 
 // Scheduler Form Component
 const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
-    onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>, createAlert?: boolean) => void;
+    onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => void;
     onCancelEdit: () => void;
     editingMessage: ScheduledMessage | null;
 }) => {
     const [message, setMessage] = useState('');
     const [datetime, setDatetime] = useState('');
-    const [createAlert, setCreateAlert] = useState(false);
+    const [notify, setNotify] = useState(false);
+    const [criticalAlert, setCriticalAlert] = useState(false);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -748,11 +748,13 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             setMessage(editingMessage.message);
             setDatetime(formatDatetimeLocal(editingMessage.datetime));
             setAttachments(editingMessage.attachments || []);
-            setCreateAlert(editingMessage.hasAlert || false);
+            setNotify(editingMessage.alert || false);
+            setCriticalAlert(editingMessage.critical_alert || false);
         } else {
             setMessage('');
             setDatetime('');
-            setCreateAlert(false);
+            setNotify(false);
+            setCriticalAlert(false);
             setAttachments([]);
         }
     }, [editingMessage]);
@@ -821,7 +823,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             message,
             attachments,
             status: 'Agendado',
-            hasAlert: createAlert,
+            alert: notify,
+            critical_alert: criticalAlert,
             ...(editingMessage && {
                 edit_id: editingMessage.edit_id,
                 previous_edit_ids: editingMessage.previous_edit_ids,
@@ -830,12 +833,13 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             }),
         };
 
-        onSubmit(newSchedule, createAlert);
+        onSubmit(newSchedule);
 
         if (!isEditing) {
             setMessage('');
             setDatetime('');
-            setCreateAlert(false);
+            setNotify(false);
+            setCriticalAlert(false);
             setAttachments([]);
         }
     };
@@ -921,27 +925,47 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 
                     <div className="flex flex-col items-center space-y-2">
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Ativar Alerta
+                            🔔 Notificação
                         </span>
                         <div className="flex items-center space-x-2">
                             <button
                                 type="button"
-                                onClick={() => setCreateAlert(!createAlert)}
+                                onClick={() => setNotify(!notify)}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                                    createAlert 
-                                        ? 'bg-green-600 focus:ring-green-500' 
+                                    notify
+                                        ? 'bg-green-600 focus:ring-green-500'
                                         : 'bg-red-600 focus:ring-red-500'
                                 }`}
                             >
                                 <span
                                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        createAlert ? 'translate-x-6' : 'translate-x-1'
+                                        notify ? 'translate-x-6' : 'translate-x-1'
                                     }`}
                                 />
                             </button>
-                            {createAlert && (
-                                <span className="text-yellow-500 text-lg">⚠️</span>
-                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center space-y-2">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            🚨 Alerta Crítico
+                        </span>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                type="button"
+                                onClick={() => setCriticalAlert(!criticalAlert)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                    criticalAlert
+                                        ? 'bg-green-600 focus:ring-green-500'
+                                        : 'bg-red-600 focus:ring-red-500'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        criticalAlert ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
                         </div>
                     </div>
 
@@ -1000,12 +1024,11 @@ const StatusBadge = ({ status }: { status: ScheduleStatus }) => {
 };
 
 // Scheduled Message Item Component
-const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday, hasAlert }: {
+const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday }: {
     message: ScheduledMessage;
     onEdit: (id: string) => void;
     onCancel: (id: string) => void;
     isToday: boolean;
-    hasAlert: boolean;
 }) => {
     const { id, datetime, message: text, status, lastUpdate } = message;
 
@@ -1035,8 +1058,11 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday, hasAlert }: 
                             {formattedDate}
                         </span>
                         <StatusBadge status={status} />
-                        {hasAlert && (
-                            <span className="text-yellow-500 text-lg" title="Alerta ativo">⚠️</span>
+                        {message.alert && (
+                            <span className="text-lg" title="Notificação ativa">🔔</span>
+                        )}
+                        {message.critical_alert && (
+                            <span className="text-lg" title="Alerta Crítico ativo">🚨</span>
                         )}
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap text-sm">
@@ -1122,7 +1148,7 @@ export default function App() {
     const leftColumn = sortedMessages.filter((_, index) => index % 2 === 0);
     const rightColumn = sortedMessages.filter((_, index) => index % 2 === 1);
 
-    const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>, createAlert = false) => {
+    const handleScheduleSubmit = useCallback(async (newMessageData: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => {
         if (!appContext) return;
 
         const existingMessage = scheduledMessages.find(m => m.id === newMessageData.id);
@@ -1156,11 +1182,7 @@ export default function App() {
 
         try {
             let success;
-            
-            if (createAlert) {
-                await sendAlertWebhook(fullMessage, appContext.contact, appContext.conversation);
-            }
-            
+
             if (isEditing) {
                 success = await updateScheduledMessage(fullMessage.id, fullMessage, appContext.contact, appContext.conversation);
             } else {
@@ -1266,16 +1288,14 @@ export default function App() {
                                 {leftColumn.map(msg => {
                                     const messageDate = dayjs(msg.datetime).format('YYYY-MM-DD');
                                     const isToday = messageDate === today;
-                                    const hasAlert = msg.hasAlert || false;
-                                    
+
                                     return (
-                                        <ScheduledMessageItem 
-                                            key={msg.id} 
-                                            message={msg} 
-                                            onEdit={handleSetEditMode} 
+                                        <ScheduledMessageItem
+                                            key={msg.id}
+                                            message={msg}
+                                            onEdit={handleSetEditMode}
                                             onCancel={(id: string) => handleCancelSchedule(id)}
                                             isToday={isToday}
-                                            hasAlert={hasAlert}
                                         />
                                     );
                                 })}
@@ -1284,16 +1304,14 @@ export default function App() {
                                 {rightColumn.map(msg => {
                                     const messageDate = dayjs(msg.datetime).format('YYYY-MM-DD');
                                     const isToday = messageDate === today;
-                                    const hasAlert = msg.hasAlert || false;
-                                    
+
                                     return (
-                                        <ScheduledMessageItem 
-                                            key={msg.id} 
-                                            message={msg} 
-                                            onEdit={handleSetEditMode} 
+                                        <ScheduledMessageItem
+                                            key={msg.id}
+                                            message={msg}
+                                            onEdit={handleSetEditMode}
                                             onCancel={(id: string) => handleCancelSchedule(id)}
                                             isToday={isToday}
-                                            hasAlert={hasAlert}
                                         />
                                     );
                                 })}

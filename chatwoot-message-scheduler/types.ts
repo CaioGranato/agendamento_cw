@@ -35,16 +35,16 @@ export interface ScheduledMessage {
   conversationid: number; // From database (lowercase) 
   alert?: boolean;
   alert_from?: string;
+  critical_alert?: boolean;
   comment?: string;
   lastupdate?: string;
   edit_id?: string;
   previous_edit_ids?: string[];
-  
+
   // Computed fields for UI compatibility
   id?: string; // Maps to schedule_id
   datetime?: string; // Maps to schedule_from
   contactId?: number; // Maps to contactid
   conversationId?: number; // Maps to conversationid
   lastUpdate?: string; // Maps to lastupdate
-  hasAlert?: boolean; // Maps to alert
 }

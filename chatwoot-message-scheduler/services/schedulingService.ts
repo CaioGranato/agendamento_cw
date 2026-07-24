@@ -26,7 +26,6 @@ const transformScheduledMessage = (apiMessage: any): ScheduledMessage => {
     contactId: apiMessage.contactid,
     conversationId: apiMessage.conversationid,
     lastUpdate: validateDate(apiMessage.lastupdate),
-    hasAlert: apiMessage.alert || false,
     // Ensure attachments is an array
     attachments: Array.isArray(apiMessage.attachments) ? apiMessage.attachments : []
   };
@@ -43,8 +42,9 @@ const transformToApiFormat = (uiMessage: Partial<ScheduledMessage>): any => {
     message: uiMessage.message,
     attachments: uiMessage.attachments || [],
     status: uiMessage.status,
-    alert: uiMessage.alert || uiMessage.hasAlert || false,
+    alert: uiMessage.alert || false,
     alert_from: uiMessage.alert_from,
+    critical_alert: uiMessage.critical_alert || false,
     comment: uiMessage.comment,
     contactid: uiMessage.contactId,
     conversationid: uiMessage.conversationId

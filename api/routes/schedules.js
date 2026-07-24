@@ -38,10 +38,10 @@ const sendScheduleWebhook = async (scheduleData) => {
   }
 };
 
-// Função para enviar webhook de alerta (condicional - apenas se alert === true)
+// Função para enviar webhook de alerta (condicional - apenas se alert ou critical_alert === true)
 const sendAlertWebhook = async (scheduleData) => {
-  if (!scheduleData.alert) {
-    return true; // Não enviar se alert for false
+  if (!scheduleData.alert && !scheduleData.critical_alert) {
+    return true; // Não enviar se nenhum dos dois estiver ativo
   }
   
   try {
