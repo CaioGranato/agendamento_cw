@@ -759,31 +759,51 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         }
     }, [editingMessage]);
 
+    const attachFile = (file: File, label: string) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const result = reader.result as string;
+            const content = result.split(',')[1];
+            setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
+            setMessage(prev => prev + (prev ? '\n' : '') + `[${label}: ${file.name}]`);
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleAttachment = (type: 'image' | 'file') => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = type === 'image' ? 'image/*' : '*/*';
         input.style.display = 'none';
-    
+
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result as string;
-                    const content = result.split(',')[1];
-                    setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
-                    
-                    const fileTypeText = type === 'image' ? 'imagem' : 'arquivo';
-                    setMessage(prev => prev + (prev ? '\n' : '') + `[${fileTypeText}: ${file.name}]`);
-                };
-                reader.readAsDataURL(file);
+                attachFile(file, type === 'image' ? 'imagem' : 'arquivo');
             }
             document.body.removeChild(input);
         };
-    
+
         document.body.appendChild(input);
         input.click();
+    };
+
+    const handlePasteImage = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    const ext = item.type.split('/')[1] || 'png';
+                    const named = new File([file], `imagem-colada-${Date.now()}.${ext}`, { type: item.type });
+                    attachFile(named, 'imagem');
+                }
+                break;
+            }
+        }
     };
 
     const handleAudioRecorded = (_audioUrl: string, base64: string) => {
@@ -868,7 +888,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                             ref={textareaRef}
                             value={message}
                             onChange={e => setMessage(e.target.value)}
-                            placeholder="Digite sua mensagem... Use os botões abaixo para anexar mídia."
+                            onPaste={handlePasteImage}
+                            placeholder="Digite sua mensagem... Use os botões abaixo para anexar mídia, ou cole (Ctrl+V) uma imagem copiada."
                             className="w-full p-3 border rounded-t bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
                             rows={6}
                             required
