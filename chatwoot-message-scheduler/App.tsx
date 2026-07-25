@@ -759,13 +759,12 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         }
     }, [editingMessage]);
 
-    const attachFile = (file: File, label: string) => {
+    const attachFile = (file: File) => {
         const reader = new FileReader();
         reader.onloadend = () => {
             const result = reader.result as string;
             const content = result.split(',')[1];
             setAttachments(prev => [...prev, { type: file.type, name: file.name, content, base64: result }]);
-            setMessage(prev => prev + (prev ? '\n' : '') + `[${label}: ${file.name}]`);
         };
         reader.readAsDataURL(file);
     };
@@ -779,7 +778,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         input.onchange = (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (file) {
-                attachFile(file, type === 'image' ? 'imagem' : 'arquivo');
+                attachFile(file);
             }
             document.body.removeChild(input);
         };
@@ -799,7 +798,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                     e.preventDefault();
                     const ext = item.type.split('/')[1] || 'png';
                     const named = new File([file], `imagem-colada-${Date.now()}.${ext}`, { type: item.type });
-                    attachFile(named, 'imagem');
+                    attachFile(named);
                 }
                 break;
             }
@@ -809,7 +808,6 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     const handleAudioRecorded = (_audioUrl: string, base64: string) => {
         const content = base64.split(',')[1];
         setAttachments(prev => [...prev, { type: 'audio/wav', name: 'audio.wav', content, base64 }]);
-        setMessage(prev => prev + (prev ? '\n' : '') + '🎵 [Áudio gravado]');
     };
 
     const handleEmojiSelect = (emoji: string) => {
