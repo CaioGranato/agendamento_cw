@@ -10,16 +10,16 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=America/Sao_Paulo
-      - DATABASE_URL=postgresql://postgres.gxbddlgvbzeyidbqyvcg:UoKbaKsC7s3waGEa@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
-      - SUPABASE_HOST=aws-1-sa-east-1.pooler.supabase.com
-      - SUPABASE_DATABASE=postgres
-      - SUPABASE_USER=postgres.gxbddlgvbzeyidbqyvcg
-      - SUPABASE_PASSWORD=UoKbaKsC7s3waGEa
-      - SUPABASE_URL=https://gxbddlgvbzeyidbqyvcg.supabase.co
-      - SUPABASE_ANON_KEY=sb_publishable_N-CZvYtuBDy_JPune_OggA_1eA4OOAt
-      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-      - N8N_ALERT_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
-      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_HOST=${SUPABASE_HOST}
+      - SUPABASE_DATABASE=${SUPABASE_DATABASE}
+      - SUPABASE_USER=${SUPABASE_USER}
+      - SUPABASE_PASSWORD=${SUPABASE_PASSWORD}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CORS_ORIGIN=*
     deploy:
       mode: replicated

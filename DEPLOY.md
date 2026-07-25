@@ -15,16 +15,16 @@ Use o arquivo `docker-compose.dockerhub.yml` que contém a stack completa com:
 ### 🌐 Variáveis de Ambiente Configuradas
 ```yaml
 # Supabase
-DATABASE_URL=postgresql://postgres.gxbddlgvbzeyidbqyvcg:UoKbaKsC7s3waGEa@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
-SUPABASE_URL=https://gxbddlgvbzeyidbqyvcg.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_N-CZvYtuBDy_JPune_OggA_1eA4OOAt
+DATABASE_URL=<definido via secret/env, nunca commitar aqui>
+SUPABASE_URL=<definido via secret/env, nunca commitar aqui>
+SUPABASE_ANON_KEY=<definido via secret/env, nunca commitar aqui>
 
 # N8N Webhooks
-N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-N8N_ALERT_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
+N8N_WEBHOOK_URL=<definido via secret/env, nunca commitar aqui>
+N8N_ALERT_WEBHOOK_URL=<definido via secret/env, nunca commitar aqui>
 
 # Gemini API
-GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+GEMINI_API_KEY=<definido via secret/env, nunca commitar aqui>
 ```
 
 ## 🔄 Fluxo de Deploy Automático

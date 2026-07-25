@@ -24,10 +24,10 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=America/Sao_Paulo
-      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
-      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-      - N8N_ALERT_WEBHOOK_URL=https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
-      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CORS_ORIGIN=*
 
     healthcheck:

@@ -9,7 +9,7 @@ services:
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=66f26cf0a1b545cfb04266ee8c678016
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - TZ=America/Sao_Paulo
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -45,10 +45,10 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=America/Sao_Paulo
-      - DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
-      - N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/default
-      - N8N_ALERT_WEBHOOK_URL=https://n8n.odtravel.com.br/webhook-test/default
-      - GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_ALERT_WEBHOOK_URL=${N8N_ALERT_WEBHOOK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CORS_ORIGIN=*
     depends_on:
       - postgres

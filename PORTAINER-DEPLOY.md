@@ -22,10 +22,10 @@
 Adicionar estas variáveis na seção **Environment variables**:
 
 ```env
-DATABASE_URL=postgresql://postgres:66f26cf0a1b545cfb04266ee8c678016@postgres:5432/postgres
-N8N_WEBHOOK_URL=https://webhookn8n.odtravel.com.br/webhook/71686ca7-d62c-43ed-8d6b-9930609ef6a9
-N8N_ALERT_WEBHOOK_URL=https://n8n.odtravel.com.br/webhook-test/c34175bd-15ac-4483-8f39-5f23ee4d1a6b
-GEMINI_API_KEY=AIzaSyD_lF9jCzGKoT2fB5apsiNbGBq7fJj8T5I
+DATABASE_URL=<definido via secret/env, nunca commitar aqui>
+N8N_WEBHOOK_URL=<definido via secret/env, nunca commitar aqui>
+N8N_ALERT_WEBHOOK_URL=<definido via secret/env, nunca commitar aqui>
+GEMINI_API_KEY=<definido via secret/env, nunca commitar aqui>
 CORS_ORIGIN=*
 ```
 
