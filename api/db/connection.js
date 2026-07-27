@@ -57,6 +57,7 @@ const createSchedule = async (scheduleData, chatwootData) => {
     alert = false,
     alert_from,
     critical_alert = false,
+    alert_level = 'notificacao',
     comment
   } = scheduleData;
 
@@ -78,12 +79,12 @@ const createSchedule = async (scheduleData, chatwootData) => {
       meta_sender_email, meta_sender_phone_number, meta_sender_identifier,
       meta_sender_thumbnail, meta_sender_custom_attributes_cidade,
       meta_sender_custom_attributes_plano, meta_sender_custom_attributes_id_externo,
-      meta_assignee_id, meta_assignee_name, meta_assignee_email, critical_alert
+      meta_assignee_id, meta_assignee_name, meta_assignee_email, critical_alert, alert_level
     ) VALUES (
       $1, $2, $3, $4, $5, $6, 'scheduled', $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
       $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
       $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
-      $48, $49, $50, $51, $52
+      $48, $49, $50, $51, $52, $53
     )
     RETURNING *
   `;
@@ -143,7 +144,8 @@ const createSchedule = async (scheduleData, chatwootData) => {
     meta?.assignee?.id || null,
     meta?.assignee?.name || null,
     meta?.assignee?.email || null,
-    critical_alert
+    critical_alert,
+    alert_level
   ];
 
   const result = await executeQuery(query, values);
@@ -162,6 +164,7 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
     alert: scheduleData.alert,
     alert_from: scheduleData.alert_from,
     critical_alert: scheduleData.critical_alert,
+    alert_level: scheduleData.alert_level,
     comment: scheduleData.comment,
     contact_name: contact?.name,
     contact_email: contact?.email,

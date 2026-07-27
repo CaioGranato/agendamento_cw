@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import 'dayjs/locale/pt-br';
-import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus } from './types';
+import { AppContext, Contact, ScheduledMessage, Attachment, ScheduleStatus, AlertLevel } from './types';
 import { getScheduledMessagesForContact, createScheduledMessage, updateScheduledMessage, deleteScheduledMessage } from './services/schedulingService';
 
 dayjs.extend(utc);
@@ -710,6 +710,39 @@ const MediaButtons = ({ onAudioRecorded, onImageSelect, onFileSelect, onEmojiSel
     );
 };
 
+// Opções de nível de alerta (integradas aos perfis de categoria criados no SIGNL4)
+const ALERT_LEVEL_OPTIONS: {
+    value: AlertLevel;
+    emoji: string;
+    description: string;
+    activeClasses: string;
+}[] = [
+    {
+        value: 'notificacao',
+        emoji: '🔔',
+        description: 'Notificação: dispara notificação sem alerta crítico',
+        activeClasses: 'border-blue-500 bg-blue-100 dark:bg-blue-900 opacity-100',
+    },
+    {
+        value: 'lembrete',
+        emoji: '✳️',
+        description: 'LEMBRETE: dispara alerta crítico no perfil ✳️ LEMBRETE❗ do SIGNL4',
+        activeClasses: 'border-green-500 bg-green-100 dark:bg-green-900 opacity-100',
+    },
+    {
+        value: 'importante',
+        emoji: '⚠️',
+        description: 'IMPORTANTE: dispara alerta crítico no perfil ⚠️ IMPORTANTE‼️ do SIGNL4',
+        activeClasses: 'border-yellow-500 bg-yellow-100 dark:bg-yellow-900 opacity-100',
+    },
+    {
+        value: 'urgente',
+        emoji: '🚨',
+        description: 'URGENTE: dispara alerta crítico no perfil 🚨 URGENTE‼️ do SIGNL4',
+        activeClasses: 'border-red-500 bg-red-100 dark:bg-red-900 opacity-100',
+    },
+];
+
 // Scheduler Form Component
 const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     onSubmit: (data: Omit<ScheduledMessage, 'contactId' | 'conversationId'>) => void;
@@ -718,8 +751,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 }) => {
     const [message, setMessage] = useState('');
     const [datetime, setDatetime] = useState('');
-    const [notify, setNotify] = useState(false);
-    const [criticalAlert, setCriticalAlert] = useState(false);
+    const [alertLevel, setAlertLevel] = useState<AlertLevel>('notificacao');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -748,13 +780,11 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             setMessage(editingMessage.message);
             setDatetime(formatDatetimeLocal(editingMessage.datetime));
             setAttachments(editingMessage.attachments || []);
-            setNotify(editingMessage.alert || false);
-            setCriticalAlert(editingMessage.critical_alert || false);
+            setAlertLevel(editingMessage.alert_level || 'notificacao');
         } else {
             setMessage('');
             setDatetime('');
-            setNotify(false);
-            setCriticalAlert(false);
+            setAlertLevel('notificacao');
             setAttachments([]);
         }
     }, [editingMessage]);
@@ -841,8 +871,9 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             message,
             attachments,
             status: 'Agendado',
-            alert: notify,
-            critical_alert: criticalAlert,
+            alert: true,
+            critical_alert: alertLevel !== 'notificacao',
+            alert_level: alertLevel,
             ...(editingMessage && {
                 edit_id: editingMessage.edit_id,
                 previous_edit_ids: editingMessage.previous_edit_ids,
@@ -856,8 +887,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         if (!isEditing) {
             setMessage('');
             setDatetime('');
-            setNotify(false);
-            setCriticalAlert(false);
+            setAlertLevel('notificacao');
             setAttachments([]);
         }
     };
@@ -942,49 +972,26 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                         />
                     </div>
 
-                    <div className="flex flex-col items-center space-y-2">
+                    <div className="flex flex-col space-y-2">
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            🔔 Notificação
+                            Nível de alerta
                         </span>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                type="button"
-                                onClick={() => setNotify(!notify)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                                    notify
-                                        ? 'bg-green-600 focus:ring-green-500'
-                                        : 'bg-red-600 focus:ring-red-500'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        notify ? 'translate-x-6' : 'translate-x-1'
+                        <div className="flex items-center space-x-1">
+                            {ALERT_LEVEL_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    title={opt.description}
+                                    onClick={() => setAlertLevel(opt.value)}
+                                    className={`px-2 py-2 rounded text-lg leading-none border-2 transition-colors ${
+                                        alertLevel === opt.value
+                                            ? opt.activeClasses
+                                            : 'border-transparent bg-slate-100 dark:bg-slate-700 opacity-50 hover:opacity-80'
                                     }`}
-                                />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col items-center space-y-2">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            🚨 Alerta Crítico
-                        </span>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                type="button"
-                                onClick={() => setCriticalAlert(!criticalAlert)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                                    criticalAlert
-                                        ? 'bg-green-600 focus:ring-green-500'
-                                        : 'bg-red-600 focus:ring-red-500'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        criticalAlert ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
-                                />
-                            </button>
+                                >
+                                    {opt.emoji}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
@@ -1077,12 +1084,12 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday }: {
                             {formattedDate}
                         </span>
                         <StatusBadge status={status} />
-                        {message.alert && (
-                            <span className="text-lg" title="Notificação ativa">🔔</span>
-                        )}
-                        {message.critical_alert && (
-                            <span className="text-lg" title="Alerta Crítico ativo">🚨</span>
-                        )}
+                        {(() => {
+                            const opt = ALERT_LEVEL_OPTIONS.find(o => o.value === (message.alert_level || 'notificacao'));
+                            return opt ? (
+                                <span className="text-lg" title={opt.description}>{opt.emoji}</span>
+                            ) : null;
+                        })()}
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap text-sm">
                         {text.length > 150 ? `${text.substring(0, 150)}...` : text}
