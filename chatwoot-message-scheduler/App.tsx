@@ -751,6 +751,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 }) => {
     const [message, setMessage] = useState('');
     const [datetime, setDatetime] = useState('');
+    const [alertEnabled, setAlertEnabled] = useState(false);
     const [alertLevel, setAlertLevel] = useState<AlertLevel>('notificacao');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -780,10 +781,13 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             setMessage(editingMessage.message);
             setDatetime(formatDatetimeLocal(editingMessage.datetime));
             setAttachments(editingMessage.attachments || []);
-            setAlertLevel(editingMessage.alert_level || 'notificacao');
+            const level = editingMessage.alert_level || 'desativado';
+            setAlertEnabled(level !== 'desativado');
+            setAlertLevel(level === 'desativado' ? 'notificacao' : level);
         } else {
             setMessage('');
             setDatetime('');
+            setAlertEnabled(false);
             setAlertLevel('notificacao');
             setAttachments([]);
         }
@@ -871,9 +875,9 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             message,
             attachments,
             status: 'Agendado',
-            alert: true,
-            critical_alert: alertLevel !== 'notificacao',
-            alert_level: alertLevel,
+            alert: alertEnabled,
+            critical_alert: alertEnabled && alertLevel !== 'notificacao',
+            alert_level: alertEnabled ? alertLevel : 'desativado',
             ...(editingMessage && {
                 edit_id: editingMessage.edit_id,
                 previous_edit_ids: editingMessage.previous_edit_ids,
@@ -887,6 +891,7 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
         if (!isEditing) {
             setMessage('');
             setDatetime('');
+            setAlertEnabled(false);
             setAlertLevel('notificacao');
             setAttachments([]);
         }
@@ -972,12 +977,39 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                         />
                     </div>
 
+                    <div className="flex flex-col items-center space-y-2">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Alerta SIGNL4
+                        </span>
+                        <button
+                            type="button"
+                            title={alertEnabled ? 'Alerta ativado: além da mensagem, dispara um alerta SIGNL4' : 'Alerta desativado: só a mensagem agendada é enviada'}
+                            onClick={() => setAlertEnabled(!alertEnabled)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                alertEnabled
+                                    ? 'bg-green-600 focus:ring-green-500'
+                                    : 'bg-red-600 focus:ring-red-500'
+                            }`}
+                        >
+                            <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    alertEnabled ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                            />
+                        </button>
+                    </div>
+
                     <div className="flex flex-col space-y-2">
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                             Nível de alerta
                         </span>
                         <div className="flex items-center space-x-1">
-                            {ALERT_LEVEL_OPTIONS.map(opt => (
+                            {!alertEnabled && (
+                                <span className="text-xs text-slate-400 dark:text-slate-500 px-2">
+                                    Ative o alerta ao lado
+                                </span>
+                            )}
+                            {alertEnabled && ALERT_LEVEL_OPTIONS.map(opt => (
                                 <button
                                     key={opt.value}
                                     type="button"
@@ -1085,7 +1117,9 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday }: {
                         </span>
                         <StatusBadge status={status} />
                         {(() => {
-                            const opt = ALERT_LEVEL_OPTIONS.find(o => o.value === (message.alert_level || 'notificacao'));
+                            const level = message.alert_level || 'desativado';
+                            if (level === 'desativado') return null;
+                            const opt = ALERT_LEVEL_OPTIONS.find(o => o.value === level);
                             return opt ? (
                                 <span className="text-lg" title={opt.description}>{opt.emoji}</span>
                             ) : null;

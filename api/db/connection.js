@@ -57,7 +57,7 @@ const createSchedule = async (scheduleData, chatwootData) => {
     alert = false,
     alert_from,
     critical_alert = false,
-    alert_level = 'notificacao',
+    alert_level = 'desativado',
     comment
   } = scheduleData;
 

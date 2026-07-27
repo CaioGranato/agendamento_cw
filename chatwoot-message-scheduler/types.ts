@@ -25,7 +25,7 @@ export interface Attachment {
 
 export type ScheduleStatus = 'scheduled' | 'agendado' | 'edited' | 'editado' | 'processing' | 'sent' | 'error' | 'cancelled';
 
-export type AlertLevel = 'notificacao' | 'lembrete' | 'importante' | 'urgente';
+export type AlertLevel = 'desativado' | 'notificacao' | 'lembrete' | 'importante' | 'urgente';
 
 export interface ScheduledMessage {
   schedule_id: string; // UUID from database

@@ -45,7 +45,7 @@ const transformToApiFormat = (uiMessage: Partial<ScheduledMessage>): any => {
     alert: uiMessage.alert || false,
     alert_from: uiMessage.alert_from,
     critical_alert: uiMessage.critical_alert || false,
-    alert_level: uiMessage.alert_level || 'notificacao',
+    alert_level: uiMessage.alert_level || 'desativado',
     comment: uiMessage.comment,
     contactid: uiMessage.contactId,
     conversationid: uiMessage.conversationId
