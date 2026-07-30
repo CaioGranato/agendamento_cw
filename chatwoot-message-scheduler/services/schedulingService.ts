@@ -40,6 +40,8 @@ const transformToApiFormat = (uiMessage: Partial<ScheduledMessage>): any => {
     schedule_id: uiMessage.id,
     schedule_from: schedule_from,
     message: uiMessage.message,
+    message_2: uiMessage.message_2 || null,
+    message_3: uiMessage.message_3 || null,
     attachments: uiMessage.attachments || [],
     status: uiMessage.status,
     alert: uiMessage.alert || false,

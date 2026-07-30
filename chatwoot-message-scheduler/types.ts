@@ -31,6 +31,8 @@ export interface ScheduledMessage {
   schedule_id: string; // UUID from database
   schedule_from: string; // ISO timestamp from database
   message: string;
+  message_2?: string | null;
+  message_3?: string | null;
   attachments: any[]; // JSON array from database
   status: ScheduleStatus;
   contactid: number; // From database (lowercase)

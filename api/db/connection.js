@@ -53,6 +53,8 @@ const createSchedule = async (scheduleData, chatwootData) => {
   const {
     schedule_from,
     message,
+    message_2 = null,
+    message_3 = null,
     attachments = [],
     alert = false,
     alert_from,
@@ -79,12 +81,13 @@ const createSchedule = async (scheduleData, chatwootData) => {
       meta_sender_email, meta_sender_phone_number, meta_sender_identifier,
       meta_sender_thumbnail, meta_sender_custom_attributes_cidade,
       meta_sender_custom_attributes_plano, meta_sender_custom_attributes_id_externo,
-      meta_assignee_id, meta_assignee_name, meta_assignee_email, critical_alert, alert_level
+      meta_assignee_id, meta_assignee_name, meta_assignee_email, critical_alert, alert_level,
+      message_2, message_3
     ) VALUES (
       $1, $2, $3, $4, $5, $6, 'scheduled', $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
       $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
       $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47,
-      $48, $49, $50, $51, $52, $53
+      $48, $49, $50, $51, $52, $53, $54, $55
     )
     RETURNING *
   `;
@@ -145,7 +148,9 @@ const createSchedule = async (scheduleData, chatwootData) => {
     meta?.assignee?.name || null,
     meta?.assignee?.email || null,
     critical_alert,
-    alert_level
+    alert_level,
+    message_2,
+    message_3
   ];
 
   const result = await executeQuery(query, values);
@@ -160,6 +165,8 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
   const dataMapping = {
     schedule_from: scheduleData.schedule_from,
     message: scheduleData.message,
+    message_2: scheduleData.message_2,
+    message_3: scheduleData.message_3,
     attachments: scheduleData.attachments,
     alert: scheduleData.alert,
     alert_from: scheduleData.alert_from,
@@ -196,6 +203,13 @@ const updateSchedule = async (schedule_id, scheduleData, chatwootData) => {
   };
 
   for (const [key, value] of Object.entries(dataMapping)) {
+    if (key === 'message_2' || key === 'message_3') {
+      // Permite limpar (null) explicitamente, diferente dos demais campos abaixo
+      if (value !== undefined) {
+        fieldsToUpdate[key] = value;
+      }
+      continue;
+    }
     if (value !== undefined && value !== null) {
       if (key === 'schedule_from' || key === 'alert_from') {
         fieldsToUpdate[key] = value;

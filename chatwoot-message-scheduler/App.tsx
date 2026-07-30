@@ -750,6 +750,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     editingMessage: ScheduledMessage | null;
 }) => {
     const [message, setMessage] = useState('');
+    const [message2, setMessage2] = useState('');
+    const [message3, setMessage3] = useState('');
     const [datetime, setDatetime] = useState('');
     const [alertEnabled, setAlertEnabled] = useState(false);
     const [alertLevel, setAlertLevel] = useState<AlertLevel>('notificacao');
@@ -779,6 +781,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
     useEffect(() => {
         if (editingMessage) {
             setMessage(editingMessage.message);
+            setMessage2(editingMessage.message_2 || '');
+            setMessage3(editingMessage.message_3 || '');
             setDatetime(formatDatetimeLocal(editingMessage.datetime));
             setAttachments(editingMessage.attachments || []);
             const level = editingMessage.alert_level || 'desativado';
@@ -786,6 +790,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             setAlertLevel(level === 'desativado' ? 'notificacao' : level);
         } else {
             setMessage('');
+            setMessage2('');
+            setMessage3('');
             setDatetime('');
             setAlertEnabled(false);
             setAlertLevel('notificacao');
@@ -873,6 +879,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
             id: editingMessage?.id || window.crypto.randomUUID(),
             datetime,
             message,
+            message_2: message2 || null,
+            message_3: message3 || null,
             attachments,
             status: 'Agendado',
             alert: alertEnabled,
@@ -890,6 +898,8 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
 
         if (!isEditing) {
             setMessage('');
+            setMessage2('');
+            setMessage3('');
             setDatetime('');
             setAlertEnabled(false);
             setAlertLevel('notificacao');
@@ -960,6 +970,33 @@ const SchedulerForm = ({ onSubmit, onCancelEdit, editingMessage }: {
                             </div>
                         </div>
                     )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Mensagem 2 <span className="text-slate-400 font-normal">(opcional, enviada 5s depois da Mensagem 1)</span>
+                    </label>
+                    <textarea
+                        value={message2}
+                        onChange={e => setMessage2(e.target.value)}
+                        placeholder="Deixe em branco se não quiser enviar uma segunda mensagem em sequência..."
+                        className="w-full p-3 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                        rows={3}
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Mensagem 3 <span className="text-slate-400 font-normal">(opcional, enviada 5s depois da Mensagem 2)</span>
+                    </label>
+                    <textarea
+                        value={message3}
+                        onChange={e => setMessage3(e.target.value)}
+                        placeholder="Deixe em branco se não quiser enviar uma terceira mensagem em sequência..."
+                        className="w-full p-3 border rounded bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                        rows={3}
+                        disabled={!message2}
+                    />
                 </div>
 
                 {/* Layout horizontal: Data/Hora | Alerta | Botão */}
@@ -1124,6 +1161,14 @@ const ScheduledMessageItem = ({ message, onEdit, onCancel, isToday }: {
                                 <span className="text-lg" title={opt.description}>{opt.emoji}</span>
                             ) : null;
                         })()}
+                        {(message.message_2 || message.message_3) && (
+                            <span
+                                className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                title="Este agendamento envia mais de uma mensagem em sequência"
+                            >
+                                +{message.message_3 ? 2 : 1} em sequência
+                            </span>
+                        )}
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap text-sm">
                         {text.length > 150 ? `${text.substring(0, 150)}...` : text}
